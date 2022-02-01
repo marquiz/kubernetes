@@ -2277,6 +2277,9 @@ type Capabilities struct {
 	Drop []Capability `json:"drop,omitempty" protobuf:"bytes,2,rep,name=drop,casttype=Capability"`
 }
 
+// ClassResourceName is the name of a class-based resource.
+type ClassResourceName string
+
 // ResourceRequirements describes the compute resource requirements.
 type ResourceRequirements struct {
 	// Limits describes the maximum amount of compute resources allowed.
@@ -2289,6 +2292,10 @@ type ResourceRequirements struct {
 	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 	// +optional
 	Requests ResourceList `json:"requests,omitempty" protobuf:"bytes,2,rep,name=requests,casttype=ResourceList,castkey=ResourceName"`
+	// Classes specifies the class resources.
+	// +featureGate=ClassResources
+	// +optional
+	Classes map[ClassResourceName]string `json:"classes,omitempty" protobuf:"bytes,3,rep.name=classes"`
 }
 
 const (
@@ -3327,6 +3334,10 @@ type PodSpec struct {
 	// +k8s:conversion-gen=false
 	// +optional
 	HostUsers *bool `json:"hostUsers,omitempty" protobuf:"bytes,37,opt,name=hostUsers"`
+	// Pod-level resources. Currently, requests and limits are not allowed
+	// to be specified for pods.
+	// +optional
+	Resources ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,38,opt,name=resources"`
 }
 
 // OSName is the set of OS'es that can be used in OS.

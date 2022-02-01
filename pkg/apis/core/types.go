@@ -2150,6 +2150,9 @@ type Capabilities struct {
 	Drop []Capability
 }
 
+// ClassResourceName is the name of a class-based resource.
+type ClassResourceName string
+
 // ResourceRequirements describes the compute resource requirements.
 type ResourceRequirements struct {
 	// Limits describes the maximum amount of compute resources allowed.
@@ -2160,6 +2163,10 @@ type ResourceRequirements struct {
 	// otherwise to an implementation-defined value
 	// +optional
 	Requests ResourceList
+	// Classes specifies the class resources.
+	// +featureGate=ClassResources
+	// +optional
+	Classes map[ClassResourceName]string
 }
 
 // Container represents a single container that is expected to be run on the host.
@@ -2997,6 +3004,10 @@ type PodSpec struct {
 	// - spec.containers[*].securityContext.runAsGroup
 	// +optional
 	OS *PodOS
+	// Pod-level resources. Currently, requests and limits are not allowed
+	// to be specified for pods.
+	// +optional
+	Resources ResourceRequirements
 }
 
 // OSName is the set of OS'es that can be used in OS.
