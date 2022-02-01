@@ -311,8 +311,10 @@ var supportedClassResources = []string{
 func determinePodClassResources(pod *v1.Pod) *runtimeapi.PodClassResources {
 	c := make(map[string]string)
 
-	// NOTE: Currently a stub as we don't support any pod-level qos-class
-	// resources via annotations.
+	// Dedicated field in pod spec. NOTE: no annotations for these.
+	for k, v := range pod.Spec.Resources.Classes {
+		c[string(k)] = v
+	}
 
 	return &runtimeapi.PodClassResources{Classes: c}
 }
@@ -328,6 +330,11 @@ func determineContainerClassResources(container *v1.Container, pod *v1.Pod) *run
 			// Default to pod-level default (if any)
 			c[resourceName] = class
 		}
+	}
+
+	// Dedicated field in pod spec takes precedence over annotations
+	for k, v := range container.Resources.Classes {
+		c[string(k)] = v
 	}
 
 	return &runtimeapi.ContainerClassResources{Classes: c}
