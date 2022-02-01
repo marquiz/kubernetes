@@ -304,3 +304,32 @@ func (m *kubeGenericRuntimeManager) getSeccompProfile(annotations map[string]str
 		ProfileType: runtimeapi.SecurityProfile_Unconfined,
 	}
 }
+
+var supportedQoSResources = []string{
+	runtimeapi.QoSResourceRdt,
+	runtimeapi.QoSResourceBlockio}
+
+func determinePodQoSResources(pod *v1.Pod) *runtimeapi.PodQoSResources {
+	c := make(map[string]string)
+
+	// NOTE: Currently a stub as we don't support any pod-level qos-class
+	// resources via annotations.
+
+	return &runtimeapi.PodQoSResources{Classes: c}
+}
+func determineContainerQoSResources(container *v1.Container, pod *v1.Pod) *runtimeapi.ContainerQoSResources {
+	c := make(map[string]string)
+
+	// Parse annotations
+	for _, resourceName := range supportedQoSResources {
+		if class, ok := pod.Annotations[resourceName+v1.QoSResourceContainerAnnotationPrefixBase+container.Name]; ok {
+			// Apply container-specific setting
+			c[resourceName] = class
+		} else if class, ok := pod.Annotations[resourceName+v1.QoSResourceDefaultAnnotationKeyBase]; ok {
+			// Default to pod-level default (if any)
+			c[resourceName] = class
+		}
+	}
+
+	return &runtimeapi.ContainerQoSResources{Classes: c}
+}

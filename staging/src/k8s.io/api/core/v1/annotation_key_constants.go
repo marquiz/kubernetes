@@ -148,4 +148,14 @@ const (
 	// Aware Hints for a Service. This may be set to "Auto" or "Disabled". Any
 	// other value is treated as "Disabled".
 	AnnotationTopologyAwareHints = "service.kubernetes.io/topology-aware-hints"
+
+	qosResourceAnnotationKeyBase string = ".resources.alpha.kubernetes.io/"
+
+	// QoSResourceDefaultAnnotationKeyBase represents the key of a pod-level
+	// QoS resource assignment.
+	QoSResourceDefaultAnnotationKeyBase string = qosResourceAnnotationKeyBase + "default"
+
+	// QoSResourceContainerAnnotationPrefixBase represents the key of a QoS
+	// resource assignment of one container of a pod.
+	QoSResourceContainerAnnotationPrefixBase string = qosResourceAnnotationKeyBase + "container."
 )

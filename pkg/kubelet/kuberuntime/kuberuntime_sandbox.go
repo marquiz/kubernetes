@@ -88,8 +88,9 @@ func (m *kubeGenericRuntimeManager) generatePodSandboxConfig(pod *v1.Pod, attemp
 			Uid:       podUID,
 			Attempt:   attempt,
 		},
-		Labels:      newPodLabels(pod),
-		Annotations: newPodAnnotations(pod),
+		Labels:       newPodLabels(pod),
+		Annotations:  newPodAnnotations(pod),
+		QosResources: determinePodQoSResources(pod),
 	}
 
 	dnsConfig, err := m.runtimeHelper.GetPodDNS(pod)
