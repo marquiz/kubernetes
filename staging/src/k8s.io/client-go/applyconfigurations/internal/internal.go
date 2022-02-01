@@ -5381,6 +5381,10 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: phase
       type:
         scalar: string
+    - name: qosResources
+      type:
+        namedType: io.k8s.api.core.v1.QoSResourceStatus
+      default: {}
     - name: volumesAttached
       type:
         list:
@@ -6066,6 +6070,10 @@ var schemaYAML = typed.YAMLObject(`types:
           elementRelationship: associative
           keys:
           - name
+    - name: resources
+      type:
+        namedType: io.k8s.api.core.v1.ResourceRequirements
+      default: {}
     - name: restartPolicy
       type:
         scalar: string
@@ -6298,6 +6306,47 @@ var schemaYAML = typed.YAMLObject(`types:
         list:
           elementType:
             namedType: io.k8s.api.core.v1.VolumeProjection
+          elementRelationship: atomic
+- name: io.k8s.api.core.v1.QoSResourceClassInfo
+  map:
+    fields:
+    - name: capacity
+      type:
+        scalar: numeric
+    - name: name
+      type:
+        scalar: string
+      default: ""
+- name: io.k8s.api.core.v1.QoSResourceInfo
+  map:
+    fields:
+    - name: classes
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.QoSResourceClassInfo
+          elementRelationship: atomic
+    - name: mutable
+      type:
+        scalar: boolean
+    - name: name
+      type:
+        scalar: string
+      default: ""
+- name: io.k8s.api.core.v1.QoSResourceStatus
+  map:
+    fields:
+    - name: containerQoSResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.QoSResourceInfo
+          elementRelationship: atomic
+    - name: podQoSResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.QoSResourceInfo
           elementRelationship: atomic
 - name: io.k8s.api.core.v1.QuobyteVolumeSource
   map:
@@ -6560,6 +6609,11 @@ var schemaYAML = typed.YAMLObject(`types:
         map:
           elementType:
             namedType: io.k8s.apimachinery.pkg.api.resource.Quantity
+    - name: qosResources
+      type:
+        map:
+          elementType:
+            scalar: string
     - name: requests
       type:
         map:

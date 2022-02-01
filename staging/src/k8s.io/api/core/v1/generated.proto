@@ -2513,6 +2513,12 @@ message NodeStatus {
   // Status of the config assigned to the node via the dynamic Kubelet config feature.
   // +optional
   optional NodeConfigStatus config = 11;
+
+  // QoSResources contains information about the QoS resources that are
+  // available on the node.
+  // +featureGate=QoSResources
+  // +optional
+  optional QoSResourceStatus qosResources = 12;
 }
 
 // NodeSystemInfo is a set of ids/uuids to uniquely identify the node.
@@ -3835,6 +3841,11 @@ message PodSpec {
   // +featureGate=DynamicResourceAllocation
   // +optional
   repeated PodResourceClaim resourceClaims = 39;
+
+  // Pod-level resources. Claims, requests and limits are not allowed
+  // to be specified for pods.
+  // +optional
+  optional ResourceRequirements resources = 40;
 }
 
 // PodStatus represents information about the status of a pod. Status may trail the actual
@@ -4142,6 +4153,44 @@ message ProjectedVolumeSource {
   // mode, like fsGroup, and the result can be other mode bits set.
   // +optional
   optional int32 defaultMode = 2;
+}
+
+// QoSResourceClassInfo contains information about single class of one QoS
+// resource.
+message QoSResourceClassInfo {
+  // Name of the class.
+  optional string name = 1;
+
+  // Capacity is the number of maximum allowed simultaneous assignments into this class
+  // Zero means "infinite" capacity i.e. the usage is not restricted
+  // +optional
+  optional int64 capacity = 2;
+}
+
+// QoSResourceInfo contains information about one QoS resource type.
+message QoSResourceInfo {
+  // Name of the resource.
+  optional string name = 1;
+
+  // Mutable is set to true if the resource supports in-place updates.
+  optional bool mutable = 2;
+
+  // Classes available for assignment.
+  // +listType=atomic
+  repeated QoSResourceClassInfo classes = 3;
+}
+
+// QoSResourceStatus describes QoS resources available on the node.
+message QoSResourceStatus {
+  // PodQoSResources contains the QoS resources that are available for pods
+  // to be assigned to.
+  // +listType=atomic
+  repeated QoSResourceInfo podQoSResources = 1;
+
+  // ContainerQoSResources contains the QoS resources that are available for
+  // containers to be assigned to.
+  // +listType=atomic
+  repeated QoSResourceInfo containerQoSResources = 2;
 }
 
 // Represents a Quobyte mount that lasts the lifetime of a pod.
@@ -4519,6 +4568,11 @@ message ResourceRequirements {
   // +featureGate=DynamicResourceAllocation
   // +optional
   repeated ResourceClaim claims = 3;
+
+  // QoSResources specifies the QoS resources.
+  // +featureGate=QoSResources
+  // +optional
+  map<string, string> qosResources = 4;
 }
 
 // SELinuxOptions are the labels to be applied to the container

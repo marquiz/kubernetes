@@ -2812,6 +2812,15 @@
             "x-kubernetes-patch-merge-key": "name",
             "x-kubernetes-patch-strategy": "merge,retainKeys"
           },
+          "resources": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/io.k8s.api.core.v1.ResourceRequirements"
+              }
+            ],
+            "default": {},
+            "description": "Pod-level resources. Claims, requests and limits are not allowed to be specified for pods."
+          },
           "restartPolicy": {
             "description": "Restart policy for all containers within the pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy",
             "type": "string"
@@ -3246,6 +3255,14 @@
               "default": {}
             },
             "description": "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+            "type": "object"
+          },
+          "qosResources": {
+            "additionalProperties": {
+              "default": "",
+              "type": "string"
+            },
+            "description": "QoSResources specifies the QoS resources.",
             "type": "object"
           },
           "requests": {

@@ -789,6 +789,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &applyconfigurationscorev1.ProbeHandlerApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("ProjectedVolumeSource"):
 		return &applyconfigurationscorev1.ProjectedVolumeSourceApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("QoSResourceClassInfo"):
+		return &applyconfigurationscorev1.QoSResourceClassInfoApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("QoSResourceInfo"):
+		return &applyconfigurationscorev1.QoSResourceInfoApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("QoSResourceStatus"):
+		return &applyconfigurationscorev1.QoSResourceStatusApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("QuobyteVolumeSource"):
 		return &applyconfigurationscorev1.QuobyteVolumeSourceApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("RBDPersistentVolumeSource"):

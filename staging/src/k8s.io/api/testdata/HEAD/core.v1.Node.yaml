@@ -108,6 +108,19 @@ status:
     osImage: osImageValue
     systemUUID: systemUUIDValue
   phase: phaseValue
+  qosResources:
+    containerQoSResources:
+    - classes:
+      - capacity: 2
+        name: nameValue
+      mutable: true
+      name: nameValue
+    podQoSResources:
+    - classes:
+      - capacity: 2
+        name: nameValue
+      mutable: true
+      name: nameValue
   volumesAttached:
   - devicePath: devicePathValue
     name: nameValue

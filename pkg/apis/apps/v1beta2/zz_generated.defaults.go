@@ -308,6 +308,8 @@ func SetObjectDefaults_DaemonSet(in *v1beta2.DaemonSet) {
 		}
 	}
 	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Overhead)
+	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Resources.Limits)
+	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Resources.Requests)
 }
 
 func SetObjectDefaults_DaemonSetList(in *v1beta2.DaemonSetList) {
@@ -583,6 +585,8 @@ func SetObjectDefaults_Deployment(in *v1beta2.Deployment) {
 		}
 	}
 	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Overhead)
+	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Resources.Limits)
+	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Resources.Requests)
 }
 
 func SetObjectDefaults_DeploymentList(in *v1beta2.DeploymentList) {
@@ -858,6 +862,8 @@ func SetObjectDefaults_ReplicaSet(in *v1beta2.ReplicaSet) {
 		}
 	}
 	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Overhead)
+	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Resources.Limits)
+	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Resources.Requests)
 }
 
 func SetObjectDefaults_ReplicaSetList(in *v1beta2.ReplicaSetList) {
@@ -1133,6 +1139,8 @@ func SetObjectDefaults_StatefulSet(in *v1beta2.StatefulSet) {
 		}
 	}
 	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Overhead)
+	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Resources.Limits)
+	v1.SetDefaults_ResourceList(&in.Spec.Template.Spec.Resources.Requests)
 	for i := range in.Spec.VolumeClaimTemplates {
 		a := &in.Spec.VolumeClaimTemplates[i]
 		v1.SetDefaults_PersistentVolumeClaim(a)

@@ -156,6 +156,32 @@
         }
       },
       "error": "errorValue"
+    },
+    "qosResources": {
+      "podQoSResources": [
+        {
+          "name": "nameValue",
+          "mutable": true,
+          "classes": [
+            {
+              "name": "nameValue",
+              "capacity": 2
+            }
+          ]
+        }
+      ],
+      "containerQoSResources": [
+        {
+          "name": "nameValue",
+          "mutable": true,
+          "classes": [
+            {
+              "name": "nameValue",
+              "capacity": 2
+            }
+          ]
+        }
+      ]
     }
   }
 }

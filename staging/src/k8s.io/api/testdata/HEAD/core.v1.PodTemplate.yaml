@@ -306,6 +306,8 @@ template:
         - name: nameValue
         limits:
           limitsKey: "0"
+        qosResources:
+          qosResourcesKey: qosResourcesValue
         requests:
           requestsKey: "0"
       securityContext:
@@ -509,6 +511,8 @@ template:
         - name: nameValue
         limits:
           limitsKey: "0"
+        qosResources:
+          qosResourcesKey: qosResourcesValue
         requests:
           requestsKey: "0"
       securityContext:
@@ -714,6 +718,8 @@ template:
         - name: nameValue
         limits:
           limitsKey: "0"
+        qosResources:
+          qosResourcesKey: qosResourcesValue
         requests:
           requestsKey: "0"
       securityContext:
@@ -799,6 +805,15 @@ template:
       source:
         resourceClaimName: resourceClaimNameValue
         resourceClaimTemplateName: resourceClaimTemplateNameValue
+    resources:
+      claims:
+      - name: nameValue
+      limits:
+        limitsKey: "0"
+      qosResources:
+        qosResourcesKey: qosResourcesValue
+      requests:
+        requestsKey: "0"
     restartPolicy: restartPolicyValue
     runtimeClassName: runtimeClassNameValue
     schedulerName: schedulerNameValue
@@ -971,6 +986,8 @@ template:
               - name: nameValue
               limits:
                 limitsKey: "0"
+              qosResources:
+                qosResourcesKey: qosResourcesValue
               requests:
                 requestsKey: "0"
             selector:

@@ -1220,6 +1220,7 @@ var map_NodeStatus = map[string]string{
 	"volumesInUse":    "List of attachable volumes in use (mounted) by the node.",
 	"volumesAttached": "List of volumes that are attached to the node.",
 	"config":          "Status of the config assigned to the node via the dynamic Kubelet config feature.",
+	"qosResources":    "QoSResources contains information about the QoS resources that are available on the node.",
 }
 
 func (NodeStatus) SwaggerDoc() map[string]string {
@@ -1703,6 +1704,7 @@ var map_PodSpec = map[string]string{
 	"hostUsers":                     "Use the host's user namespace. Optional: Default to true. If set to true or not present, the pod will be run in the host user namespace, useful for when the pod needs a feature only available to the host user namespace, such as loading a kernel module with CAP_SYS_MODULE. When set to false, a new userns is created for the pod. Setting false is useful for mitigating container breakout vulnerabilities even allowing users to run their containers as root without actually having root privileges on the host. This field is alpha-level and is only honored by servers that enable the UserNamespacesSupport feature.",
 	"schedulingGates":               "SchedulingGates is an opaque list of values that if specified will block scheduling the pod. More info:  https://git.k8s.io/enhancements/keps/sig-scheduling/3521-pod-scheduling-readiness.\n\nThis is an alpha-level feature enabled by PodSchedulingReadiness feature gate.",
 	"resourceClaims":                "ResourceClaims defines which ResourceClaims must be allocated and reserved before the Pod is allowed to start. The resources will be made available to those containers which consume them by name.\n\nThis is an alpha field and requires enabling the DynamicResourceAllocation feature gate.\n\nThis field is immutable.",
+	"resources":                     "Pod-level resources. Claims, requests and limits are not allowed to be specified for pods.",
 }
 
 func (PodSpec) SwaggerDoc() map[string]string {
@@ -1856,6 +1858,37 @@ var map_ProjectedVolumeSource = map[string]string{
 
 func (ProjectedVolumeSource) SwaggerDoc() map[string]string {
 	return map_ProjectedVolumeSource
+}
+
+var map_QoSResourceClassInfo = map[string]string{
+	"":         "QoSResourceClassInfo contains information about single class of one QoS resource.",
+	"name":     "Name of the class.",
+	"capacity": "Capacity is the number of maximum allowed simultaneous assignments into this class Zero means \"infinite\" capacity i.e. the usage is not restricted",
+}
+
+func (QoSResourceClassInfo) SwaggerDoc() map[string]string {
+	return map_QoSResourceClassInfo
+}
+
+var map_QoSResourceInfo = map[string]string{
+	"":        "QoSResourceInfo contains information about one QoS resource type.",
+	"name":    "Name of the resource.",
+	"mutable": "Mutable is set to true if the resource supports in-place updates.",
+	"classes": "Classes available for assignment.",
+}
+
+func (QoSResourceInfo) SwaggerDoc() map[string]string {
+	return map_QoSResourceInfo
+}
+
+var map_QoSResourceStatus = map[string]string{
+	"":                      "QoSResourceStatus describes QoS resources available on the node.",
+	"podQoSResources":       "PodQoSResources contains the QoS resources that are available for pods to be assigned to.",
+	"containerQoSResources": "ContainerQoSResources contains the QoS resources that are available for containers to be assigned to.",
+}
+
+func (QoSResourceStatus) SwaggerDoc() map[string]string {
+	return map_QoSResourceStatus
 }
 
 var map_QuobyteVolumeSource = map[string]string{
@@ -2038,10 +2071,11 @@ func (ResourceQuotaStatus) SwaggerDoc() map[string]string {
 }
 
 var map_ResourceRequirements = map[string]string{
-	"":         "ResourceRequirements describes the compute resource requirements.",
-	"limits":   "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
-	"requests": "Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
-	"claims":   "Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.\n\nThis is an alpha field and requires enabling the DynamicResourceAllocation feature gate.\n\nThis field is immutable.",
+	"":             "ResourceRequirements describes the compute resource requirements.",
+	"limits":       "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+	"requests":     "Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+	"claims":       "Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.\n\nThis is an alpha field and requires enabling the DynamicResourceAllocation feature gate.\n\nThis field is immutable.",
+	"qosResources": "QoSResources specifies the QoS resources.",
 }
 
 func (ResourceRequirements) SwaggerDoc() map[string]string {
