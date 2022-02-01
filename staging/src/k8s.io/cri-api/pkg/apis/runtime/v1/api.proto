@@ -437,6 +437,8 @@ message PodSandboxConfig {
     LinuxPodSandboxConfig linux = 8;
     // Optional configurations specific to Windows hosts.
     WindowsPodSandboxConfig windows = 9;
+    // Configuration of class resources.
+    PodClassResources class_resources = 10;
 }
 
 message RunPodSandboxRequest {
@@ -920,6 +922,20 @@ message WindowsContainerResources {
     int64 rootfs_size_in_bytes = 5;
 }
 
+// ContainerClassResources specifies the configuration of class based
+// resources of a container.
+message ContainerClassResources {
+    // Class resources the container will be assigned to.
+    map<string, string> classes = 1;
+}
+
+// PodClassResources specifies the configuration of class based
+// resources of a pod.
+message PodClassResources {
+    // Class resources the pod will be assigned to.
+    map<string, string> classes = 1;
+}
+
 // ContainerMetadata holds all necessary information for building the container
 // name. The container runtime is encouraged to expose the metadata in its user
 // interface for better user experience. E.g., runtime can construct a unique
@@ -1007,6 +1023,9 @@ message ContainerConfig {
     LinuxContainerConfig linux = 15;
     // Configuration specific to Windows containers.
     WindowsContainerConfig windows = 16;
+
+    // Configuration of class resources.
+    ContainerClassResources class_resources = 17;
 }
 
 message CreateContainerRequest {
