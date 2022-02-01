@@ -72,7 +72,10 @@
         {
           "name": "nameValue"
         }
-      ]
+      ],
+      "qosResources": {
+        "qosResourcesKey": "qosResourcesValue"
+      }
     },
     "volumeName": "volumeNameValue",
     "storageClassName": "storageClassNameValue",

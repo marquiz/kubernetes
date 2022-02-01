@@ -4030,6 +4030,7 @@ func (in *PodSpec) DeepCopyInto(out *PodSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	return
 }
 
@@ -4813,6 +4814,13 @@ func (in *ResourceRequirements) DeepCopyInto(out *ResourceRequirements) {
 		in, out := &in.Claims, &out.Claims
 		*out = make([]ResourceClaim, len(*in))
 		copy(*out, *in)
+	}
+	if in.QoSResources != nil {
+		in, out := &in.QoSResources, &out.QoSResources
+		*out = make(map[QoSResourceName]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
 	}
 	return
 }

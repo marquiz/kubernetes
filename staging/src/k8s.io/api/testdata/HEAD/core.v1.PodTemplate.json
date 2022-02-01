@@ -442,7 +442,10 @@
                     {
                       "name": "nameValue"
                     }
-                  ]
+                  ],
+                  "qosResources": {
+                    "qosResourcesKey": "qosResourcesValue"
+                  }
                 },
                 "volumeName": "volumeNameValue",
                 "storageClassName": "storageClassNameValue",
@@ -534,7 +537,10 @@
               {
                 "name": "nameValue"
               }
-            ]
+            ],
+            "qosResources": {
+              "qosResourcesKey": "qosResourcesValue"
+            }
           },
           "volumeMounts": [
             {
@@ -811,7 +817,10 @@
               {
                 "name": "nameValue"
               }
-            ]
+            ],
+            "qosResources": {
+              "qosResourcesKey": "qosResourcesValue"
+            }
           },
           "volumeMounts": [
             {
@@ -1088,7 +1097,10 @@
               {
                 "name": "nameValue"
               }
-            ]
+            ],
+            "qosResources": {
+              "qosResourcesKey": "qosResourcesValue"
+            }
           },
           "volumeMounts": [
             {
@@ -1646,7 +1658,23 @@
             "resourceClaimTemplateName": "resourceClaimTemplateNameValue"
           }
         }
-      ]
+      ],
+      "resources": {
+        "limits": {
+          "limitsKey": "0"
+        },
+        "requests": {
+          "requestsKey": "0"
+        },
+        "claims": [
+          {
+            "name": "nameValue"
+          }
+        ],
+        "qosResources": {
+          "qosResourcesKey": "qosResourcesValue"
+        }
+      }
     }
   }
 }

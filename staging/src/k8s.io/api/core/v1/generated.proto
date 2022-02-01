@@ -3835,6 +3835,11 @@ message PodSpec {
   // +featureGate=DynamicResourceAllocation
   // +optional
   repeated PodResourceClaim resourceClaims = 39;
+
+  // Pod-level resources. Claims, requests and limits are not allowed
+  // to be specified for pods.
+  // +optional
+  optional ResourceRequirements resources = 40;
 }
 
 // PodStatus represents information about the status of a pod. Status may trail the actual
@@ -4519,6 +4524,11 @@ message ResourceRequirements {
   // +featureGate=DynamicResourceAllocation
   // +optional
   repeated ResourceClaim claims = 3;
+
+  // QoSResources specifies the QoS resources.
+  // +featureGate=QoSResources
+  // +optional
+  map<string, string> qosResources = 4;
 }
 
 // SELinuxOptions are the labels to be applied to the container

@@ -25,9 +25,10 @@ import (
 // ResourceRequirementsApplyConfiguration represents an declarative configuration of the ResourceRequirements type for use
 // with apply.
 type ResourceRequirementsApplyConfiguration struct {
-	Limits   *v1.ResourceList                  `json:"limits,omitempty"`
-	Requests *v1.ResourceList                  `json:"requests,omitempty"`
-	Claims   []ResourceClaimApplyConfiguration `json:"claims,omitempty"`
+	Limits       *v1.ResourceList                  `json:"limits,omitempty"`
+	Requests     *v1.ResourceList                  `json:"requests,omitempty"`
+	Claims       []ResourceClaimApplyConfiguration `json:"claims,omitempty"`
+	QoSResources map[v1.QoSResourceName]string     `json:"qosResources,omitempty"`
 }
 
 // ResourceRequirementsApplyConfiguration constructs an declarative configuration of the ResourceRequirements type for use with
@@ -61,6 +62,20 @@ func (b *ResourceRequirementsApplyConfiguration) WithClaims(values ...*ResourceC
 			panic("nil value passed to WithClaims")
 		}
 		b.Claims = append(b.Claims, *values[i])
+	}
+	return b
+}
+
+// WithQoSResources puts the entries into the QoSResources field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the QoSResources field,
+// overwriting an existing map entries in QoSResources field with the same key.
+func (b *ResourceRequirementsApplyConfiguration) WithQoSResources(entries map[v1.QoSResourceName]string) *ResourceRequirementsApplyConfiguration {
+	if b.QoSResources == nil && len(entries) > 0 {
+		b.QoSResources = make(map[v1.QoSResourceName]string, len(entries))
+	}
+	for k, v := range entries {
+		b.QoSResources[k] = v
 	}
 	return b
 }

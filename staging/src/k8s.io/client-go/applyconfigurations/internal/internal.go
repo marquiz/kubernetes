@@ -6066,6 +6066,10 @@ var schemaYAML = typed.YAMLObject(`types:
           elementRelationship: associative
           keys:
           - name
+    - name: resources
+      type:
+        namedType: io.k8s.api.core.v1.ResourceRequirements
+      default: {}
     - name: restartPolicy
       type:
         scalar: string
@@ -6560,6 +6564,11 @@ var schemaYAML = typed.YAMLObject(`types:
         map:
           elementType:
             namedType: io.k8s.apimachinery.pkg.api.resource.Quantity
+    - name: qosResources
+      type:
+        map:
+          elementType:
+            scalar: string
     - name: requests
       type:
         map:

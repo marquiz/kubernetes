@@ -6308,6 +6308,9 @@ func autoConvert_v1_PodSpec_To_core_PodSpec(in *v1.PodSpec, out *core.PodSpec, s
 	// INFO: in.HostUsers opted out of conversion generation
 	out.SchedulingGates = *(*[]core.PodSchedulingGate)(unsafe.Pointer(&in.SchedulingGates))
 	out.ResourceClaims = *(*[]core.PodResourceClaim)(unsafe.Pointer(&in.ResourceClaims))
+	if err := Convert_v1_ResourceRequirements_To_core_ResourceRequirements(&in.Resources, &out.Resources, s); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -6363,6 +6366,9 @@ func autoConvert_core_PodSpec_To_v1_PodSpec(in *core.PodSpec, out *v1.PodSpec, s
 	out.OS = (*v1.PodOS)(unsafe.Pointer(in.OS))
 	out.SchedulingGates = *(*[]v1.PodSchedulingGate)(unsafe.Pointer(&in.SchedulingGates))
 	out.ResourceClaims = *(*[]v1.PodResourceClaim)(unsafe.Pointer(&in.ResourceClaims))
+	if err := Convert_core_ResourceRequirements_To_v1_ResourceRequirements(&in.Resources, &out.Resources, s); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -7175,6 +7181,7 @@ func autoConvert_v1_ResourceRequirements_To_core_ResourceRequirements(in *v1.Res
 	out.Limits = *(*core.ResourceList)(unsafe.Pointer(&in.Limits))
 	out.Requests = *(*core.ResourceList)(unsafe.Pointer(&in.Requests))
 	out.Claims = *(*[]core.ResourceClaim)(unsafe.Pointer(&in.Claims))
+	out.QoSResources = *(*map[core.QoSResourceName]string)(unsafe.Pointer(&in.QoSResources))
 	return nil
 }
 
@@ -7187,6 +7194,7 @@ func autoConvert_core_ResourceRequirements_To_v1_ResourceRequirements(in *core.R
 	out.Limits = *(*v1.ResourceList)(unsafe.Pointer(&in.Limits))
 	out.Requests = *(*v1.ResourceList)(unsafe.Pointer(&in.Requests))
 	out.Claims = *(*[]v1.ResourceClaim)(unsafe.Pointer(&in.Claims))
+	out.QoSResources = *(*map[v1.QoSResourceName]string)(unsafe.Pointer(&in.QoSResources))
 	return nil
 }
 
