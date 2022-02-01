@@ -33,6 +33,7 @@ import (
 	"sync"
 	"time"
 
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	crierror "k8s.io/cri-api/pkg/errors"
 
 	"github.com/opencontainers/selinux/go-selinux"
@@ -47,6 +48,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+	kubefeatures "k8s.io/kubernetes/pkg/features"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/kubelet/cri/remote"
 	"k8s.io/kubernetes/pkg/kubelet/events"
@@ -336,6 +338,10 @@ func (m *kubeGenericRuntimeManager) generateContainerConfig(ctx context.Context,
 		Stdin:       container.Stdin,
 		StdinOnce:   container.StdinOnce,
 		Tty:         container.TTY,
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(kubefeatures.QoSResources) {
+		config.QosResources = getContainerQoSResources(container, pod)
 	}
 
 	// set platform specific configurations.

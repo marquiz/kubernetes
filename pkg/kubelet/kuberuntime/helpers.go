@@ -304,3 +304,22 @@ func (m *kubeGenericRuntimeManager) getSeccompProfile(annotations map[string]str
 		ProfileType: runtimeapi.SecurityProfile_Unconfined,
 	}
 }
+
+func getPodQoSResources(pod *v1.Pod) *runtimeapi.PodQoSResources {
+	c := make(map[string]string)
+
+	for k, v := range pod.Spec.Resources.QoSResources {
+		c[string(k)] = v
+	}
+
+	return &runtimeapi.PodQoSResources{Classes: c}
+}
+func getContainerQoSResources(container *v1.Container, pod *v1.Pod) *runtimeapi.ContainerQoSResources {
+	c := make(map[string]string)
+
+	for k, v := range container.Resources.QoSResources {
+		c[string(k)] = v
+	}
+
+	return &runtimeapi.ContainerQoSResources{Classes: c}
+}
