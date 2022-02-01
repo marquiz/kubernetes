@@ -30,6 +30,7 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/kubelet/pkg/types"
 	"k8s.io/kubernetes/pkg/features"
+	kubefeatures "k8s.io/kubernetes/pkg/features"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	runtimeutil "k8s.io/kubernetes/pkg/kubelet/kuberuntime/util"
 	"k8s.io/kubernetes/pkg/kubelet/util"
@@ -90,6 +91,10 @@ func (m *kubeGenericRuntimeManager) generatePodSandboxConfig(pod *v1.Pod, attemp
 		},
 		Labels:      newPodLabels(pod),
 		Annotations: newPodAnnotations(pod),
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(kubefeatures.QOSResources) {
+		podSandboxConfig.QOSResources = getPodQOSResources(pod)
 	}
 
 	dnsConfig, err := m.runtimeHelper.GetPodDNS(pod)

@@ -361,6 +361,10 @@ func (m *kubeGenericRuntimeManager) generateContainerConfig(ctx context.Context,
 		Tty:         container.TTY,
 	}
 
+	if utilfeature.DefaultFeatureGate.Enabled(features.QOSResources) {
+		config.QOSResources = getContainerQOSResources(container, pod)
+	}
+
 	// set platform specific configurations.
 	if err := m.applyPlatformSpecificContainerConfig(config, container, pod, uid, username, nsTarget); err != nil {
 		return nil, cleanupAction, err

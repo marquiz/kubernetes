@@ -453,11 +453,15 @@ func (r *remoteRuntimeService) UpdateContainerResources(ctx context.Context, con
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
-	if _, err := r.runtimeClient.UpdateContainerResources(ctx, &runtimeapi.UpdateContainerResourcesRequest{
+	req := runtimeapi.UpdateContainerResourcesRequest{
 		ContainerId: containerID,
 		Linux:       resources.GetLinux(),
-		Windows:     resources.GetWindows(),
-	}); err != nil {
+		Windows:     resources.GetWindows()}
+	if utilfeature.DefaultFeatureGate.Enabled(features.QOSResources) {
+		req.QOSResources = resources.GetQOSResources()
+	}
+
+	if _, err := r.runtimeClient.UpdateContainerResources(ctx, &req); err != nil {
 		klog.ErrorS(err, "UpdateContainerResources from runtime service failed", "containerID", containerID)
 		return err
 	}

@@ -332,3 +332,18 @@ func getAppArmorProfile(pod *v1.Pod, container *v1.Container) (*runtimeapi.Secur
 
 	return securityProfile, deprecatedProfile, nil
 }
+
+func getPodQOSResources(pod *v1.Pod) []*runtimeapi.PodQOSResource {
+	out := make([]*runtimeapi.PodQOSResource, len(pod.Spec.QOSResources))
+	for i, r := range pod.Spec.QOSResources {
+		out[i] = &runtimeapi.PodQOSResource{Name: string(r.Name), Class: r.Class}
+	}
+	return out
+}
+func getContainerQOSResources(container *v1.Container, pod *v1.Pod) []*runtimeapi.ContainerQOSResource {
+	out := make([]*runtimeapi.ContainerQOSResource, len(container.Resources.QOSResources))
+	for i, r := range container.Resources.QOSResources {
+		out[i] = &runtimeapi.ContainerQOSResource{Name: string(r.Name), Class: r.Class}
+	}
+	return out
+}
