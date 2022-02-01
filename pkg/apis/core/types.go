@@ -2174,6 +2174,9 @@ type Capabilities struct {
 	Drop []Capability
 }
 
+// QoSResourceName is the name of a class-based resource.
+type QoSResourceName string
+
 // ResourceRequirements describes the compute resource requirements.
 type ResourceRequirements struct {
 	// Limits describes the maximum amount of compute resources allowed.
@@ -2195,6 +2198,10 @@ type ResourceRequirements struct {
 	// +featureGate=DynamicResourceAllocation
 	// +optional
 	Claims []ResourceClaim
+	// QoSResources specifies the QoS resources.
+	// +featureGate=QoSResources
+	// +optional
+	QoSResources map[QoSResourceName]string
 }
 
 // ResourceClaim references one entry in PodSpec.ResourceClaims.
@@ -3062,6 +3069,10 @@ type PodSpec struct {
 	// +featureGate=DynamicResourceAllocation
 	// +optional
 	ResourceClaims []PodResourceClaim
+	// Pod-level resources. Claims, requests and limits are not allowed
+	// to be specified for pods.
+	// +optional
+	Resources ResourceRequirements
 }
 
 // PodResourceClaim references exactly one ResourceClaim through a ClaimSource.

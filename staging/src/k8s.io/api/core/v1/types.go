@@ -2301,6 +2301,9 @@ type Capabilities struct {
 	Drop []Capability `json:"drop,omitempty" protobuf:"bytes,2,rep,name=drop,casttype=Capability"`
 }
 
+// QoSResourceName is the name of a class-based resource.
+type QoSResourceName string
+
 // ResourceRequirements describes the compute resource requirements.
 type ResourceRequirements struct {
 	// Limits describes the maximum amount of compute resources allowed.
@@ -2326,6 +2329,10 @@ type ResourceRequirements struct {
 	// +featureGate=DynamicResourceAllocation
 	// +optional
 	Claims []ResourceClaim `json:"claims,omitempty" protobuf:"bytes,3,opt,name=claims"`
+	// QoSResources specifies the QoS resources.
+	// +featureGate=QoSResources
+	// +optional
+	QoSResources map[QoSResourceName]string `json:"qosResources,omitempty" protobuf:"bytes,4,rep.name=qosResources"`
 }
 
 // ResourceClaim references one entry in PodSpec.ResourceClaims.
@@ -3412,6 +3419,10 @@ type PodSpec struct {
 	// +featureGate=DynamicResourceAllocation
 	// +optional
 	ResourceClaims []PodResourceClaim `json:"resourceClaims,omitempty" patchStrategy:"merge,retainKeys" patchMergeKey:"name" protobuf:"bytes,39,rep,name=resourceClaims"`
+	// Pod-level resources. Claims, requests and limits are not allowed
+	// to be specified for pods.
+	// +optional
+	Resources ResourceRequirements `json:"resources,omitempty" protobuf:"bytes,40,opt,name=resources"`
 }
 
 // PodResourceClaim references exactly one ResourceClaim through a ClaimSource.
