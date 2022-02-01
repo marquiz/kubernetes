@@ -126,4 +126,14 @@ const (
 	// Aware Hints for a Service. This may be set to "Auto" or "Disabled". Any
 	// other value is treated as "Disabled".
 	AnnotationTopologyAwareHints = "service.kubernetes.io/topology-aware-hints"
+
+	classResourceAnnotationKeyBase string = ".resources.beta.kubernetes.io/"
+
+	// ClassResourceDefaultAnnotationKeyBase represents the key of a pod-level
+	// class resource assignment.
+	ClassResourceDefaultAnnotationKeyBase string = classResourceAnnotationKeyBase + "default"
+
+	// ClassResourceContainerAnnotationPrefixBase represents the key of a class
+	// resource assignment of one container of a pod.
+	ClassResourceContainerAnnotationPrefixBase string = classResourceAnnotationKeyBase + "container."
 )

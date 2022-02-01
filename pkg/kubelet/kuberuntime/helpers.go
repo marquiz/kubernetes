@@ -303,3 +303,32 @@ func (m *kubeGenericRuntimeManager) getSeccompProfile(annotations map[string]str
 		ProfileType: runtimeapi.SecurityProfile_Unconfined,
 	}
 }
+
+var supportedClassResources = []string{
+	runtimeapi.ClassResourceRdt,
+	runtimeapi.ClassResourceBlockio}
+
+func determinePodClassResources(pod *v1.Pod) *runtimeapi.PodClassResources {
+	c := make(map[string]string)
+
+	// NOTE: Currently a stub as we don't support any pod-level qos-class
+	// resources via annotations.
+
+	return &runtimeapi.PodClassResources{Classes: c}
+}
+func determineContainerClassResources(container *v1.Container, pod *v1.Pod) *runtimeapi.ContainerClassResources {
+	c := make(map[string]string)
+
+	// Parse annotations
+	for _, resourceName := range supportedClassResources {
+		if class, ok := pod.Annotations[resourceName+v1.ClassResourceContainerAnnotationPrefixBase+container.Name]; ok {
+			// Apply container-specific setting
+			c[resourceName] = class
+		} else if class, ok := pod.Annotations[resourceName+v1.ClassResourceDefaultAnnotationKeyBase]; ok {
+			// Default to pod-level default (if any)
+			c[resourceName] = class
+		}
+	}
+
+	return &runtimeapi.ContainerClassResources{Classes: c}
+}

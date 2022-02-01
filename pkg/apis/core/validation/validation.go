@@ -205,6 +205,9 @@ func ValidatePodSpecificAnnotationUpdates(newPod, oldPod *core.Pod, fldPath *fie
 		if k == core.MirrorPodAnnotationKey {
 			allErrs = append(allErrs, field.Forbidden(fldPath.Key(k), "may not remove or update mirror pod annotation"))
 		}
+		if strings.HasSuffix(k, v1.ClassResourceDefaultAnnotationKeyBase) || strings.Index(k, v1.ClassResourceContainerAnnotationPrefixBase) > -1 {
+			allErrs = append(allErrs, field.Forbidden(fldPath.Key(k), "may not remove or update class resource annotations"))
+		}
 	}
 	// Check for additions
 	for k := range newAnnotations {
@@ -216,6 +219,9 @@ func ValidatePodSpecificAnnotationUpdates(newPod, oldPod *core.Pod, fldPath *fie
 		}
 		if k == core.MirrorPodAnnotationKey {
 			allErrs = append(allErrs, field.Forbidden(fldPath.Key(k), "may not add mirror pod annotation"))
+		}
+		if strings.HasSuffix(k, v1.ClassResourceDefaultAnnotationKeyBase) || strings.Index(k, v1.ClassResourceContainerAnnotationPrefixBase) > -1 {
+			allErrs = append(allErrs, field.Forbidden(fldPath.Key(k), "may not add class resource annotations"))
 		}
 	}
 	allErrs = append(allErrs, ValidatePodSpecificAnnotations(newAnnotations, &newPod.Spec, fldPath, opts)...)
