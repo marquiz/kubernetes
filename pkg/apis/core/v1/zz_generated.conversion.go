@@ -6188,6 +6188,9 @@ func autoConvert_v1_PodSpec_To_core_PodSpec(in *v1.PodSpec, out *core.PodSpec, s
 	out.SetHostnameAsFQDN = (*bool)(unsafe.Pointer(in.SetHostnameAsFQDN))
 	out.OS = (*core.PodOS)(unsafe.Pointer(in.OS))
 	// INFO: in.HostUsers opted out of conversion generation
+	if err := Convert_v1_ResourceRequirements_To_core_ResourceRequirements(&in.Resources, &out.Resources, s); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -6241,6 +6244,9 @@ func autoConvert_core_PodSpec_To_v1_PodSpec(in *core.PodSpec, out *v1.PodSpec, s
 	out.EnableServiceLinks = (*bool)(unsafe.Pointer(in.EnableServiceLinks))
 	out.TopologySpreadConstraints = *(*[]v1.TopologySpreadConstraint)(unsafe.Pointer(&in.TopologySpreadConstraints))
 	out.OS = (*v1.PodOS)(unsafe.Pointer(in.OS))
+	if err := Convert_core_ResourceRequirements_To_v1_ResourceRequirements(&in.Resources, &out.Resources, s); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -7032,6 +7038,7 @@ func Convert_core_ResourceQuotaStatus_To_v1_ResourceQuotaStatus(in *core.Resourc
 func autoConvert_v1_ResourceRequirements_To_core_ResourceRequirements(in *v1.ResourceRequirements, out *core.ResourceRequirements, s conversion.Scope) error {
 	out.Limits = *(*core.ResourceList)(unsafe.Pointer(&in.Limits))
 	out.Requests = *(*core.ResourceList)(unsafe.Pointer(&in.Requests))
+	out.Classes = *(*map[core.ClassResourceName]string)(unsafe.Pointer(&in.Classes))
 	return nil
 }
 
@@ -7043,6 +7050,7 @@ func Convert_v1_ResourceRequirements_To_core_ResourceRequirements(in *v1.Resourc
 func autoConvert_core_ResourceRequirements_To_v1_ResourceRequirements(in *core.ResourceRequirements, out *v1.ResourceRequirements, s conversion.Scope) error {
 	out.Limits = *(*v1.ResourceList)(unsafe.Pointer(&in.Limits))
 	out.Requests = *(*v1.ResourceList)(unsafe.Pointer(&in.Requests))
+	out.Classes = *(*map[v1.ClassResourceName]string)(unsafe.Pointer(&in.Classes))
 	return nil
 }
 

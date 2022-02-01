@@ -62,6 +62,7 @@ type PodSpecApplyConfiguration struct {
 	SetHostnameAsFQDN             *bool                                        `json:"setHostnameAsFQDN,omitempty"`
 	OS                            *PodOSApplyConfiguration                     `json:"os,omitempty"`
 	HostUsers                     *bool                                        `json:"hostUsers,omitempty"`
+	Resources                     *ResourceRequirementsApplyConfiguration      `json:"resources,omitempty"`
 }
 
 // PodSpecApplyConfiguration constructs an declarative configuration of the PodSpec type for use with
@@ -414,5 +415,13 @@ func (b *PodSpecApplyConfiguration) WithOS(value *PodOSApplyConfiguration) *PodS
 // If called multiple times, the HostUsers field is set to the value of the last call.
 func (b *PodSpecApplyConfiguration) WithHostUsers(value bool) *PodSpecApplyConfiguration {
 	b.HostUsers = &value
+	return b
+}
+
+// WithResources sets the Resources field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Resources field is set to the value of the last call.
+func (b *PodSpecApplyConfiguration) WithResources(value *ResourceRequirementsApplyConfiguration) *PodSpecApplyConfiguration {
+	b.Resources = value
 	return b
 }

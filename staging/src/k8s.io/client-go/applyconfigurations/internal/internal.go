@@ -5872,6 +5872,10 @@ var schemaYAML = typed.YAMLObject(`types:
           elementType:
             namedType: io.k8s.api.core.v1.PodReadinessGate
           elementRelationship: atomic
+    - name: resources
+      type:
+        namedType: io.k8s.api.core.v1.ResourceRequirements
+      default: {}
     - name: restartPolicy
       type:
         scalar: string
@@ -6338,6 +6342,11 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: io.k8s.api.core.v1.ResourceRequirements
   map:
     fields:
+    - name: classes
+      type:
+        map:
+          elementType:
+            scalar: string
     - name: limits
       type:
         map:

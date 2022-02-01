@@ -7401,6 +7401,10 @@
           },
           "type": "array"
         },
+        "resources": {
+          "$ref": "#/definitions/io.k8s.api.core.v1.ResourceRequirements",
+          "description": "Pod-level resources. Currently, requests and limits are not allowed to be specified for pods."
+        },
         "restartPolicy": {
           "description": "Restart policy for all containers within the pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy\n\n",
           "type": "string"
@@ -8195,6 +8199,13 @@
     "io.k8s.api.core.v1.ResourceRequirements": {
       "description": "ResourceRequirements describes the compute resource requirements.",
       "properties": {
+        "classes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Classes specifies the class resources.",
+          "type": "object"
+        },
         "limits": {
           "additionalProperties": {
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"

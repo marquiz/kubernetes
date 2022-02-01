@@ -520,6 +520,9 @@
                       },
                       "requests": {
                         "requestsKey": "0"
+                      },
+                      "classes": {
+                        "classesKey": "classesValue"
                       }
                     },
                     "volumeName": "volumeNameValue",
@@ -606,6 +609,9 @@
                 },
                 "requests": {
                   "requestsKey": "0"
+                },
+                "classes": {
+                  "classesKey": "classesValue"
                 }
               },
               "volumeMounts": [
@@ -878,6 +884,9 @@
                 },
                 "requests": {
                   "requestsKey": "0"
+                },
+                "classes": {
+                  "classesKey": "classesValue"
                 }
               },
               "volumeMounts": [
@@ -1150,6 +1159,9 @@
                 },
                 "requests": {
                   "requestsKey": "0"
+                },
+                "classes": {
+                  "classesKey": "classesValue"
                 }
               },
               "volumeMounts": [
@@ -1694,7 +1706,18 @@
           "os": {
             "name": "nameValue"
           },
-          "hostUsers": true
+          "hostUsers": true,
+          "resources": {
+            "limits": {
+              "limitsKey": "0"
+            },
+            "requests": {
+              "requestsKey": "0"
+            },
+            "classes": {
+              "classesKey": "classesValue"
+            }
+          }
         }
       },
       "ttlSecondsAfterFinished": 8,

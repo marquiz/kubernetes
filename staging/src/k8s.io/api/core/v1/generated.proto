@@ -3747,6 +3747,11 @@ message PodSpec {
   // +k8s:conversion-gen=false
   // +optional
   optional bool hostUsers = 37;
+
+  // Pod-level resources. Currently, requests and limits are not allowed
+  // to be specified for pods.
+  // +optional
+  optional ResourceRequirements resources = 38;
 }
 
 // PodStatus represents information about the status of a pod. Status may trail the actual
@@ -4409,6 +4414,11 @@ message ResourceRequirements {
   // More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
   // +optional
   map<string, k8s.io.apimachinery.pkg.api.resource.Quantity> requests = 2;
+
+  // Classes specifies the class resources.
+  // +featureGate=ClassResources
+  // +optional
+  map<string, string> classes = 3;
 }
 
 // SELinuxOptions are the labels to be applied to the container

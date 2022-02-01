@@ -25,8 +25,9 @@ import (
 // ResourceRequirementsApplyConfiguration represents an declarative configuration of the ResourceRequirements type for use
 // with apply.
 type ResourceRequirementsApplyConfiguration struct {
-	Limits   *v1.ResourceList `json:"limits,omitempty"`
-	Requests *v1.ResourceList `json:"requests,omitempty"`
+	Limits   *v1.ResourceList                `json:"limits,omitempty"`
+	Requests *v1.ResourceList                `json:"requests,omitempty"`
+	Classes  map[v1.ClassResourceName]string `json:"classes,omitempty"`
 }
 
 // ResourceRequirementsApplyConfiguration constructs an declarative configuration of the ResourceRequirements type for use with
@@ -48,5 +49,19 @@ func (b *ResourceRequirementsApplyConfiguration) WithLimits(value v1.ResourceLis
 // If called multiple times, the Requests field is set to the value of the last call.
 func (b *ResourceRequirementsApplyConfiguration) WithRequests(value v1.ResourceList) *ResourceRequirementsApplyConfiguration {
 	b.Requests = &value
+	return b
+}
+
+// WithClasses puts the entries into the Classes field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the Classes field,
+// overwriting an existing map entries in Classes field with the same key.
+func (b *ResourceRequirementsApplyConfiguration) WithClasses(entries map[v1.ClassResourceName]string) *ResourceRequirementsApplyConfiguration {
+	if b.Classes == nil && len(entries) > 0 {
+		b.Classes = make(map[v1.ClassResourceName]string, len(entries))
+	}
+	for k, v := range entries {
+		b.Classes[k] = v
+	}
 	return b
 }

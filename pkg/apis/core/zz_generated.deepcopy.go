@@ -3961,6 +3961,7 @@ func (in *PodSpec) DeepCopyInto(out *PodSpec) {
 		*out = new(PodOS)
 		**out = **in
 	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	return
 }
 
@@ -4717,6 +4718,13 @@ func (in *ResourceRequirements) DeepCopyInto(out *ResourceRequirements) {
 		*out = make(ResourceList, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val.DeepCopy()
+		}
+	}
+	if in.Classes != nil {
+		in, out := &in.Classes, &out.Classes
+		*out = make(map[ClassResourceName]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
 		}
 	}
 	return

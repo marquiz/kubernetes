@@ -67,6 +67,9 @@
       },
       "requests": {
         "requestsKey": "0"
+      },
+      "classes": {
+        "classesKey": "classesValue"
       }
     },
     "volumeName": "volumeNameValue",
