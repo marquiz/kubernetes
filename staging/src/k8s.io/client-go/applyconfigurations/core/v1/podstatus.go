@@ -42,6 +42,7 @@ type PodStatusApplyConfiguration struct {
 	EphemeralContainerStatuses []ContainerStatusApplyConfiguration        `json:"ephemeralContainerStatuses,omitempty"`
 	Resize                     *v1.PodResizeStatus                        `json:"resize,omitempty"`
 	ResourceClaimStatuses      []PodResourceClaimStatusApplyConfiguration `json:"resourceClaimStatuses,omitempty"`
+	QOSResources               []PodQOSResourceRequestApplyConfiguration  `json:"qosResources,omitempty"`
 }
 
 // PodStatusApplyConfiguration constructs an declarative configuration of the PodStatus type for use with
@@ -209,6 +210,19 @@ func (b *PodStatusApplyConfiguration) WithResourceClaimStatuses(values ...*PodRe
 			panic("nil value passed to WithResourceClaimStatuses")
 		}
 		b.ResourceClaimStatuses = append(b.ResourceClaimStatuses, *values[i])
+	}
+	return b
+}
+
+// WithQOSResources adds the given value to the QOSResources field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the QOSResources field.
+func (b *PodStatusApplyConfiguration) WithQOSResources(values ...*PodQOSResourceRequestApplyConfiguration) *PodStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithQOSResources")
+		}
+		b.QOSResources = append(b.QOSResources, *values[i])
 	}
 	return b
 }

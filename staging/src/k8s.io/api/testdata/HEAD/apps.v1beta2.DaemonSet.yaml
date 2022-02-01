@@ -340,6 +340,9 @@ spec:
           - name: nameValue
           limits:
             limitsKey: "0"
+          qosResources:
+          - class: classValue
+            name: nameValue
           requests:
             requestsKey: "0"
         restartPolicy: restartPolicyValue
@@ -555,6 +558,9 @@ spec:
           - name: nameValue
           limits:
             limitsKey: "0"
+          qosResources:
+          - class: classValue
+            name: nameValue
           requests:
             requestsKey: "0"
         restartPolicy: restartPolicyValue
@@ -772,6 +778,9 @@ spec:
           - name: nameValue
           limits:
             limitsKey: "0"
+          qosResources:
+          - class: classValue
+            name: nameValue
           requests:
             requestsKey: "0"
         restartPolicy: restartPolicyValue
@@ -855,6 +864,9 @@ spec:
       preemptionPolicy: preemptionPolicyValue
       priority: 25
       priorityClassName: priorityClassNameValue
+      qosResources:
+      - class: classValue
+        name: nameValue
       readinessGates:
       - conditionType: conditionTypeValue
       resourceClaims:

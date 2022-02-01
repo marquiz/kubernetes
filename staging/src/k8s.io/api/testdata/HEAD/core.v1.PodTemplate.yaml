@@ -329,6 +329,9 @@ template:
         - name: nameValue
         limits:
           limitsKey: "0"
+        qosResources:
+        - class: classValue
+          name: nameValue
         requests:
           requestsKey: "0"
       restartPolicy: restartPolicyValue
@@ -544,6 +547,9 @@ template:
         - name: nameValue
         limits:
           limitsKey: "0"
+        qosResources:
+        - class: classValue
+          name: nameValue
         requests:
           requestsKey: "0"
       restartPolicy: restartPolicyValue
@@ -761,6 +767,9 @@ template:
         - name: nameValue
         limits:
           limitsKey: "0"
+        qosResources:
+        - class: classValue
+          name: nameValue
         requests:
           requestsKey: "0"
       restartPolicy: restartPolicyValue
@@ -844,6 +853,9 @@ template:
     preemptionPolicy: preemptionPolicyValue
     priority: 25
     priorityClassName: priorityClassNameValue
+    qosResources:
+    - class: classValue
+      name: nameValue
     readinessGates:
     - conditionType: conditionTypeValue
     resourceClaims:

@@ -1559,6 +1559,22 @@
             "description": "Name is a DNS_LABEL representing the unique name of the container. Each container in a pod must have a unique name across all container types. Cannot be updated.",
             "type": "string"
           },
+          "qosResources": {
+            "description": "QOSResources represents the QoS resources assigned for this container.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.QOSResourceRequest"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-map-keys": [
+              "name"
+            ],
+            "x-kubernetes-list-type": "map"
+          },
           "ready": {
             "default": false,
             "description": "Ready specifies whether the container is currently passing its readiness check. The value will change as readiness probes keep executing. If no readiness probes are specified, this field defaults to true once the container is fully started (see Started field).\n\nThe value is typically used to determine whether a container is ready to accept traffic.",
@@ -3990,6 +4006,15 @@
             "description": "NodePhase is the recently observed lifecycle phase of the node. More info: https://kubernetes.io/docs/concepts/nodes/node/#phase The field is never populated, and now is deprecated.",
             "type": "string"
           },
+          "qosResources": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/io.k8s.api.core.v1.QOSResourceStatus"
+              }
+            ],
+            "default": {},
+            "description": "QOSResources contains information about the QoS resources that are available on the node."
+          },
           "runtimeHandlers": {
             "description": "The available runtime handlers.",
             "items": {
@@ -5175,6 +5200,26 @@
         ],
         "type": "object"
       },
+      "io.k8s.api.core.v1.PodQOSResourceRequest": {
+        "description": "PodQOSResourceRequest specifies a request for one QoS resource type for a Pod.",
+        "properties": {
+          "class": {
+            "default": "",
+            "description": "Name of the class (inside the QoS resource type specified by Name field).",
+            "type": "string"
+          },
+          "name": {
+            "default": "",
+            "description": "Name of the QoS resource.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "class"
+        ],
+        "type": "object"
+      },
       "io.k8s.api.core.v1.PodReadinessGate": {
         "description": "PodReadinessGate contains the reference to a pod condition",
         "properties": {
@@ -5515,6 +5560,22 @@
             "description": "If specified, indicates the pod's priority. \"system-node-critical\" and \"system-cluster-critical\" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be default or zero if there is no default.",
             "type": "string"
           },
+          "qosResources": {
+            "description": "QOSResources specifies the Pod-level requests of QoS resources. Container-level QoS resources may be specified in which case they are considered as a default for all containers within the Pod.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.PodQOSResourceRequest"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-map-keys": [
+              "name"
+            ],
+            "x-kubernetes-list-type": "map"
+          },
           "readinessGates": {
             "description": "If specified, all readiness gates will be evaluated for pod readiness. A pod is ready when all its containers are ready AND all conditions specified in the readiness gates have status equal to \"True\" More info: https://git.k8s.io/enhancements/keps/sig-network/580-pod-readiness-gates",
             "items": {
@@ -5781,6 +5842,22 @@
           "qosClass": {
             "description": "The Quality of Service (QOS) classification assigned to the pod based on resource requirements See PodQOSClass type for available QOS classes More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/#quality-of-service-classes",
             "type": "string"
+          },
+          "qosResources": {
+            "description": "QOSResources represents the pod-level QoS resources assigned for this Pod.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.PodQOSResourceRequest"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-map-keys": [
+              "name"
+            ],
+            "x-kubernetes-list-type": "map"
           },
           "reason": {
             "description": "A brief CamelCase message indicating details about why the pod is in this state. e.g. 'Evicted'",
@@ -6080,6 +6157,109 @@
               "allOf": [
                 {
                   "$ref": "#/components/schemas/io.k8s.api.core.v1.VolumeProjection"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-type": "atomic"
+          }
+        },
+        "type": "object"
+      },
+      "io.k8s.api.core.v1.QOSResourceClassInfo": {
+        "description": "QOSResourceClassInfo contains information about single class of one QoS resource.",
+        "properties": {
+          "capacity": {
+            "description": "Capacity is the number of maximum allowed simultaneous assignments into this class. Zero means \"infinite\" capacity i.e. the usage is not restricted.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "default": "",
+            "description": "Name of the class.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "io.k8s.api.core.v1.QOSResourceInfo": {
+        "description": "QOSResourceInfo contains information about one QoS resource type.",
+        "properties": {
+          "classes": {
+            "description": "Classes available for assignment.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.QOSResourceClassInfo"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-type": "atomic"
+          },
+          "mutable": {
+            "description": "Mutable is set to true if the resource supports in-place updates.",
+            "type": "boolean"
+          },
+          "name": {
+            "default": "",
+            "description": "Name of the resource.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "classes"
+        ],
+        "type": "object"
+      },
+      "io.k8s.api.core.v1.QOSResourceRequest": {
+        "description": "QOSResourceRequest specifies a request for one QoS resource type.",
+        "properties": {
+          "class": {
+            "default": "",
+            "description": "Name of the class (inside the QoS resource type specified by Name field).",
+            "type": "string"
+          },
+          "name": {
+            "default": "",
+            "description": "Name of the QoS resource.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "class"
+        ],
+        "type": "object"
+      },
+      "io.k8s.api.core.v1.QOSResourceStatus": {
+        "description": "QOSResourceStatus describes QoS resources available on the node.",
+        "properties": {
+          "containerQOSResources": {
+            "description": "ContainerQOSResources contains the QoS resources that are available for containers to be assigned to.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.QOSResourceInfo"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-type": "atomic"
+          },
+          "podQOSResources": {
+            "description": "PodQOSResources contains the QoS resources that are available for pods to be assigned to.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.QOSResourceInfo"
                 }
               ],
               "default": {}
@@ -6654,6 +6834,22 @@
             },
             "description": "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
             "type": "object"
+          },
+          "qosResources": {
+            "description": "QOSResources specifies the requested QoS resources.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.QOSResourceRequest"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-map-keys": [
+              "name"
+            ],
+            "x-kubernetes-list-type": "map"
           },
           "requests": {
             "additionalProperties": {

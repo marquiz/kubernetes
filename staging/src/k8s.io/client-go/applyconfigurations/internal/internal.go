@@ -5062,6 +5062,14 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
       default: ""
+    - name: qosResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.QOSResourceRequest
+          elementRelationship: associative
+          keys:
+          - name
     - name: ready
       type:
         scalar: boolean
@@ -6211,6 +6219,10 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: phase
       type:
         scalar: string
+    - name: qosResources
+      type:
+        namedType: io.k8s.api.core.v1.QOSResourceStatus
+      default: {}
     - name: runtimeHandlers
       type:
         list:
@@ -6748,6 +6760,17 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
       default: ""
+- name: io.k8s.api.core.v1.PodQOSResourceRequest
+  map:
+    fields:
+    - name: class
+      type:
+        scalar: string
+      default: ""
+    - name: name
+      type:
+        scalar: string
+      default: ""
 - name: io.k8s.api.core.v1.PodReadinessGate
   map:
     fields:
@@ -6927,6 +6950,14 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: priorityClassName
       type:
         scalar: string
+    - name: qosResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.PodQOSResourceRequest
+          elementRelationship: associative
+          keys:
+          - name
     - name: readinessGates
       type:
         list:
@@ -7063,6 +7094,14 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: qosClass
       type:
         scalar: string
+    - name: qosResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.PodQOSResourceRequest
+          elementRelationship: associative
+          keys:
+          - name
     - name: reason
       type:
         scalar: string
@@ -7190,6 +7229,58 @@ var schemaYAML = typed.YAMLObject(`types:
         list:
           elementType:
             namedType: io.k8s.api.core.v1.VolumeProjection
+          elementRelationship: atomic
+- name: io.k8s.api.core.v1.QOSResourceClassInfo
+  map:
+    fields:
+    - name: capacity
+      type:
+        scalar: numeric
+    - name: name
+      type:
+        scalar: string
+      default: ""
+- name: io.k8s.api.core.v1.QOSResourceInfo
+  map:
+    fields:
+    - name: classes
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.QOSResourceClassInfo
+          elementRelationship: atomic
+    - name: mutable
+      type:
+        scalar: boolean
+    - name: name
+      type:
+        scalar: string
+      default: ""
+- name: io.k8s.api.core.v1.QOSResourceRequest
+  map:
+    fields:
+    - name: class
+      type:
+        scalar: string
+      default: ""
+    - name: name
+      type:
+        scalar: string
+      default: ""
+- name: io.k8s.api.core.v1.QOSResourceStatus
+  map:
+    fields:
+    - name: containerQOSResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.QOSResourceInfo
+          elementRelationship: atomic
+    - name: podQOSResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.QOSResourceInfo
           elementRelationship: atomic
 - name: io.k8s.api.core.v1.QuobyteVolumeSource
   map:
@@ -7450,6 +7541,14 @@ var schemaYAML = typed.YAMLObject(`types:
         map:
           elementType:
             namedType: io.k8s.apimachinery.pkg.api.resource.Quantity
+    - name: qosResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.QOSResourceRequest
+          elementRelationship: associative
+          keys:
+          - name
     - name: requests
       type:
         map:

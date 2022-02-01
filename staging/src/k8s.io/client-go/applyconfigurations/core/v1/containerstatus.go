@@ -37,6 +37,7 @@ type ContainerStatusApplyConfiguration struct {
 	AllocatedResources   *corev1.ResourceList                    `json:"allocatedResources,omitempty"`
 	Resources            *ResourceRequirementsApplyConfiguration `json:"resources,omitempty"`
 	VolumeMounts         []VolumeMountStatusApplyConfiguration   `json:"volumeMounts,omitempty"`
+	QOSResources         []QOSResourceRequestApplyConfiguration  `json:"qosResources,omitempty"`
 }
 
 // ContainerStatusApplyConfiguration constructs an declarative configuration of the ContainerStatus type for use with
@@ -142,6 +143,19 @@ func (b *ContainerStatusApplyConfiguration) WithVolumeMounts(values ...*VolumeMo
 			panic("nil value passed to WithVolumeMounts")
 		}
 		b.VolumeMounts = append(b.VolumeMounts, *values[i])
+	}
+	return b
+}
+
+// WithQOSResources adds the given value to the QOSResources field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the QOSResources field.
+func (b *ContainerStatusApplyConfiguration) WithQOSResources(values ...*QOSResourceRequestApplyConfiguration) *ContainerStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithQOSResources")
+		}
+		b.QOSResources = append(b.QOSResources, *values[i])
 	}
 	return b
 }

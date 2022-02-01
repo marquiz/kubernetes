@@ -164,6 +164,32 @@
           "recursiveReadOnlyMounts": true
         }
       }
-    ]
+    ],
+    "qosResources": {
+      "podQOSResources": [
+        {
+          "name": "nameValue",
+          "mutable": true,
+          "classes": [
+            {
+              "name": "nameValue",
+              "capacity": 2
+            }
+          ]
+        }
+      ],
+      "containerQOSResources": [
+        {
+          "name": "nameValue",
+          "mutable": true,
+          "classes": [
+            {
+              "name": "nameValue",
+              "capacity": 2
+            }
+          ]
+        }
+      ]
+    }
   }
 }

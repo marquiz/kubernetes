@@ -482,6 +482,7 @@ var map_ContainerStatus = map[string]string{
 	"allocatedResources": "AllocatedResources represents the compute resources allocated for this container by the node. Kubelet sets this value to Container.Resources.Requests upon successful pod admission and after successfully admitting desired pod resize.",
 	"resources":          "Resources represents the compute resource requests and limits that have been successfully enacted on the running container after it has been started or has been successfully resized.",
 	"volumeMounts":       "Status of volume mounts.",
+	"qosResources":       "QOSResources represents the QoS resources assigned for this container.",
 }
 
 func (ContainerStatus) SwaggerDoc() map[string]string {
@@ -1292,6 +1293,7 @@ var map_NodeStatus = map[string]string{
 	"volumesAttached": "List of volumes that are attached to the node.",
 	"config":          "Status of the config assigned to the node via the dynamic Kubelet config feature.",
 	"runtimeHandlers": "The available runtime handlers.",
+	"qosResources":    "QOSResources contains information about the QoS resources that are available on the node.",
 }
 
 func (NodeStatus) SwaggerDoc() map[string]string {
@@ -1686,6 +1688,16 @@ func (PodProxyOptions) SwaggerDoc() map[string]string {
 	return map_PodProxyOptions
 }
 
+var map_PodQOSResourceRequest = map[string]string{
+	"":      "PodQOSResourceRequest specifies a request for one QoS resource type for a Pod.",
+	"name":  "Name of the QoS resource.",
+	"class": "Name of the class (inside the QoS resource type specified by Name field).",
+}
+
+func (PodQOSResourceRequest) SwaggerDoc() map[string]string {
+	return map_PodQOSResourceRequest
+}
+
 var map_PodReadinessGate = map[string]string{
 	"":              "PodReadinessGate contains the reference to a pod condition",
 	"conditionType": "ConditionType refers to a condition in the pod's condition list with matching type.",
@@ -1793,6 +1805,7 @@ var map_PodSpec = map[string]string{
 	"hostUsers":                     "Use the host's user namespace. Optional: Default to true. If set to true or not present, the pod will be run in the host user namespace, useful for when the pod needs a feature only available to the host user namespace, such as loading a kernel module with CAP_SYS_MODULE. When set to false, a new userns is created for the pod. Setting false is useful for mitigating container breakout vulnerabilities even allowing users to run their containers as root without actually having root privileges on the host. This field is alpha-level and is only honored by servers that enable the UserNamespacesSupport feature.",
 	"schedulingGates":               "SchedulingGates is an opaque list of values that if specified will block scheduling the pod. If schedulingGates is not empty, the pod will stay in the SchedulingGated state and the scheduler will not attempt to schedule the pod.\n\nSchedulingGates can only be set at pod creation time, and be removed only afterwards.",
 	"resourceClaims":                "ResourceClaims defines which ResourceClaims must be allocated and reserved before the Pod is allowed to start. The resources will be made available to those containers which consume them by name.\n\nThis is an alpha field and requires enabling the DynamicResourceAllocation feature gate.\n\nThis field is immutable.",
+	"qosResources":                  "QOSResources specifies the Pod-level requests of QoS resources. Container-level QoS resources may be specified in which case they are considered as a default for all containers within the Pod.",
 }
 
 func (PodSpec) SwaggerDoc() map[string]string {
@@ -1817,6 +1830,7 @@ var map_PodStatus = map[string]string{
 	"ephemeralContainerStatuses": "Status for any ephemeral containers that have run in this pod.",
 	"resize":                     "Status of resources resize desired for pod's containers. It is empty if no resources resize is pending. Any changes to container resources will automatically set this to \"Proposed\"",
 	"resourceClaimStatuses":      "Status of resource claims.",
+	"qosResources":               "QOSResources represents the pod-level QoS resources assigned for this Pod.",
 }
 
 func (PodStatus) SwaggerDoc() map[string]string {
@@ -1949,6 +1963,47 @@ var map_ProjectedVolumeSource = map[string]string{
 
 func (ProjectedVolumeSource) SwaggerDoc() map[string]string {
 	return map_ProjectedVolumeSource
+}
+
+var map_QOSResourceClassInfo = map[string]string{
+	"":         "QOSResourceClassInfo contains information about single class of one QoS resource.",
+	"name":     "Name of the class.",
+	"capacity": "Capacity is the number of maximum allowed simultaneous assignments into this class. Zero means \"infinite\" capacity i.e. the usage is not restricted.",
+}
+
+func (QOSResourceClassInfo) SwaggerDoc() map[string]string {
+	return map_QOSResourceClassInfo
+}
+
+var map_QOSResourceInfo = map[string]string{
+	"":        "QOSResourceInfo contains information about one QoS resource type.",
+	"name":    "Name of the resource.",
+	"mutable": "Mutable is set to true if the resource supports in-place updates.",
+	"classes": "Classes available for assignment.",
+}
+
+func (QOSResourceInfo) SwaggerDoc() map[string]string {
+	return map_QOSResourceInfo
+}
+
+var map_QOSResourceRequest = map[string]string{
+	"":      "QOSResourceRequest specifies a request for one QoS resource type.",
+	"name":  "Name of the QoS resource.",
+	"class": "Name of the class (inside the QoS resource type specified by Name field).",
+}
+
+func (QOSResourceRequest) SwaggerDoc() map[string]string {
+	return map_QOSResourceRequest
+}
+
+var map_QOSResourceStatus = map[string]string{
+	"":                      "QOSResourceStatus describes QoS resources available on the node.",
+	"podQOSResources":       "PodQOSResources contains the QoS resources that are available for pods to be assigned to.",
+	"containerQOSResources": "ContainerQOSResources contains the QoS resources that are available for containers to be assigned to.",
+}
+
+func (QOSResourceStatus) SwaggerDoc() map[string]string {
+	return map_QOSResourceStatus
 }
 
 var map_QuobyteVolumeSource = map[string]string{
@@ -2131,10 +2186,11 @@ func (ResourceQuotaStatus) SwaggerDoc() map[string]string {
 }
 
 var map_ResourceRequirements = map[string]string{
-	"":         "ResourceRequirements describes the compute resource requirements.",
-	"limits":   "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
-	"requests": "Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
-	"claims":   "Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.\n\nThis is an alpha field and requires enabling the DynamicResourceAllocation feature gate.\n\nThis field is immutable. It can only be set for containers.",
+	"":             "ResourceRequirements describes the compute resource requirements.",
+	"limits":       "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+	"requests":     "Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+	"claims":       "Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.\n\nThis is an alpha field and requires enabling the DynamicResourceAllocation feature gate.\n\nThis field is immutable. It can only be set for containers.",
+	"qosResources": "QOSResources specifies the requested QoS resources.",
 }
 
 func (ResourceRequirements) SwaggerDoc() map[string]string {

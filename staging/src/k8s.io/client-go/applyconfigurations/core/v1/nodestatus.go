@@ -37,6 +37,7 @@ type NodeStatusApplyConfiguration struct {
 	VolumesAttached []AttachedVolumeApplyConfiguration     `json:"volumesAttached,omitempty"`
 	Config          *NodeConfigStatusApplyConfiguration    `json:"config,omitempty"`
 	RuntimeHandlers []NodeRuntimeHandlerApplyConfiguration `json:"runtimeHandlers,omitempty"`
+	QOSResources    *QOSResourceStatusApplyConfiguration   `json:"qosResources,omitempty"`
 }
 
 // NodeStatusApplyConfiguration constructs an declarative configuration of the NodeStatus type for use with
@@ -165,5 +166,13 @@ func (b *NodeStatusApplyConfiguration) WithRuntimeHandlers(values ...*NodeRuntim
 		}
 		b.RuntimeHandlers = append(b.RuntimeHandlers, *values[i])
 	}
+	return b
+}
+
+// WithQOSResources sets the QOSResources field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the QOSResources field is set to the value of the last call.
+func (b *NodeStatusApplyConfiguration) WithQOSResources(value *QOSResourceStatusApplyConfiguration) *NodeStatusApplyConfiguration {
+	b.QOSResources = value
 	return b
 }

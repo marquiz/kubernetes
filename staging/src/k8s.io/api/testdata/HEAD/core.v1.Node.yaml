@@ -108,6 +108,19 @@ status:
     osImage: osImageValue
     systemUUID: systemUUIDValue
   phase: phaseValue
+  qosResources:
+    containerQOSResources:
+    - classes:
+      - capacity: 2
+        name: nameValue
+      mutable: true
+      name: nameValue
+    podQOSResources:
+    - classes:
+      - capacity: 2
+        name: nameValue
+      mutable: true
+      name: nameValue
   runtimeHandlers:
   - features:
       recursiveReadOnlyMounts: true

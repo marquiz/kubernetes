@@ -861,6 +861,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &applyconfigurationscorev1.PodIPApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("PodOS"):
 		return &applyconfigurationscorev1.PodOSApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("PodQOSResourceRequest"):
+		return &applyconfigurationscorev1.PodQOSResourceRequestApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("PodReadinessGate"):
 		return &applyconfigurationscorev1.PodReadinessGateApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("PodResourceClaim"):
@@ -891,6 +893,14 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &applyconfigurationscorev1.ProbeHandlerApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("ProjectedVolumeSource"):
 		return &applyconfigurationscorev1.ProjectedVolumeSourceApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("QOSResourceClassInfo"):
+		return &applyconfigurationscorev1.QOSResourceClassInfoApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("QOSResourceInfo"):
+		return &applyconfigurationscorev1.QOSResourceInfoApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("QOSResourceRequest"):
+		return &applyconfigurationscorev1.QOSResourceRequestApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("QOSResourceStatus"):
+		return &applyconfigurationscorev1.QOSResourceStatusApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("QuobyteVolumeSource"):
 		return &applyconfigurationscorev1.QuobyteVolumeSourceApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("RBDPersistentVolumeSource"):

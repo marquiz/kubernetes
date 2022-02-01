@@ -64,6 +64,7 @@ type PodSpecApplyConfiguration struct {
 	HostUsers                     *bool                                        `json:"hostUsers,omitempty"`
 	SchedulingGates               []PodSchedulingGateApplyConfiguration        `json:"schedulingGates,omitempty"`
 	ResourceClaims                []PodResourceClaimApplyConfiguration         `json:"resourceClaims,omitempty"`
+	QOSResources                  []PodQOSResourceRequestApplyConfiguration    `json:"qosResources,omitempty"`
 }
 
 // PodSpecApplyConfiguration constructs an declarative configuration of the PodSpec type for use with
@@ -441,6 +442,19 @@ func (b *PodSpecApplyConfiguration) WithResourceClaims(values ...*PodResourceCla
 			panic("nil value passed to WithResourceClaims")
 		}
 		b.ResourceClaims = append(b.ResourceClaims, *values[i])
+	}
+	return b
+}
+
+// WithQOSResources adds the given value to the QOSResources field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the QOSResources field.
+func (b *PodSpecApplyConfiguration) WithQOSResources(values ...*PodQOSResourceRequestApplyConfiguration) *PodSpecApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithQOSResources")
+		}
+		b.QOSResources = append(b.QOSResources, *values[i])
 	}
 	return b
 }

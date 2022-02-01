@@ -2754,6 +2754,26 @@
         ],
         "type": "object"
       },
+      "io.k8s.api.core.v1.PodQOSResourceRequest": {
+        "description": "PodQOSResourceRequest specifies a request for one QoS resource type for a Pod.",
+        "properties": {
+          "class": {
+            "default": "",
+            "description": "Name of the class (inside the QoS resource type specified by Name field).",
+            "type": "string"
+          },
+          "name": {
+            "default": "",
+            "description": "Name of the QoS resource.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "class"
+        ],
+        "type": "object"
+      },
       "io.k8s.api.core.v1.PodReadinessGate": {
         "description": "PodReadinessGate contains the reference to a pod condition",
         "properties": {
@@ -3076,6 +3096,22 @@
             "description": "If specified, indicates the pod's priority. \"system-node-critical\" and \"system-cluster-critical\" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be default or zero if there is no default.",
             "type": "string"
           },
+          "qosResources": {
+            "description": "QOSResources specifies the Pod-level requests of QoS resources. Container-level QoS resources may be specified in which case they are considered as a default for all containers within the Pod.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.PodQOSResourceRequest"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-map-keys": [
+              "name"
+            ],
+            "x-kubernetes-list-type": "map"
+          },
           "readinessGates": {
             "description": "If specified, all readiness gates will be evaluated for pod readiness. A pod is ready when all its containers are ready AND all conditions specified in the readiness gates have status equal to \"True\" More info: https://git.k8s.io/enhancements/keps/sig-network/580-pod-readiness-gates",
             "items": {
@@ -3389,6 +3425,26 @@
         },
         "type": "object"
       },
+      "io.k8s.api.core.v1.QOSResourceRequest": {
+        "description": "QOSResourceRequest specifies a request for one QoS resource type.",
+        "properties": {
+          "class": {
+            "default": "",
+            "description": "Name of the class (inside the QoS resource type specified by Name field).",
+            "type": "string"
+          },
+          "name": {
+            "default": "",
+            "description": "Name of the QoS resource.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "class"
+        ],
+        "type": "object"
+      },
       "io.k8s.api.core.v1.QuobyteVolumeSource": {
         "description": "Represents a Quobyte mount that lasts the lifetime of a pod. Quobyte volumes do not support ownership management or SELinux relabeling.",
         "properties": {
@@ -3543,6 +3599,22 @@
             },
             "description": "Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
             "type": "object"
+          },
+          "qosResources": {
+            "description": "QOSResources specifies the requested QoS resources.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.QOSResourceRequest"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-map-keys": [
+              "name"
+            ],
+            "x-kubernetes-list-type": "map"
           },
           "requests": {
             "additionalProperties": {

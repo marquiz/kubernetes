@@ -130,6 +130,12 @@
             {
               "name": "nameValue"
             }
+          ],
+          "qosResources": [
+            {
+              "name": "nameValue",
+              "class": "classValue"
+            }
           ]
         },
         "volumeMounts": [
@@ -138,6 +144,12 @@
             "mountPath": "mountPathValue",
             "readOnly": true,
             "recursiveReadOnly": "recursiveReadOnlyValue"
+          }
+        ],
+        "qosResources": [
+          {
+            "name": "nameValue",
+            "class": "classValue"
           }
         ]
       }
@@ -201,6 +213,12 @@
             {
               "name": "nameValue"
             }
+          ],
+          "qosResources": [
+            {
+              "name": "nameValue",
+              "class": "classValue"
+            }
           ]
         },
         "volumeMounts": [
@@ -209,6 +227,12 @@
             "mountPath": "mountPathValue",
             "readOnly": true,
             "recursiveReadOnly": "recursiveReadOnlyValue"
+          }
+        ],
+        "qosResources": [
+          {
+            "name": "nameValue",
+            "class": "classValue"
           }
         ]
       }
@@ -273,6 +297,12 @@
             {
               "name": "nameValue"
             }
+          ],
+          "qosResources": [
+            {
+              "name": "nameValue",
+              "class": "classValue"
+            }
           ]
         },
         "volumeMounts": [
@@ -282,6 +312,12 @@
             "readOnly": true,
             "recursiveReadOnly": "recursiveReadOnlyValue"
           }
+        ],
+        "qosResources": [
+          {
+            "name": "nameValue",
+            "class": "classValue"
+          }
         ]
       }
     ],
@@ -290,6 +326,12 @@
       {
         "name": "nameValue",
         "resourceClaimName": "resourceClaimNameValue"
+      }
+    ],
+    "qosResources": [
+      {
+        "name": "nameValue",
+        "class": "classValue"
       }
     ]
   }

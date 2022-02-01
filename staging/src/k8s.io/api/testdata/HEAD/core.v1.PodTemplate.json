@@ -550,6 +550,12 @@
               {
                 "name": "nameValue"
               }
+            ],
+            "qosResources": [
+              {
+                "name": "nameValue",
+                "class": "classValue"
+              }
             ]
           },
           "resizePolicy": [
@@ -845,6 +851,12 @@
               {
                 "name": "nameValue"
               }
+            ],
+            "qosResources": [
+              {
+                "name": "nameValue",
+                "class": "classValue"
+              }
             ]
           },
           "resizePolicy": [
@@ -1139,6 +1151,12 @@
             "claims": [
               {
                 "name": "nameValue"
+              }
+            ],
+            "qosResources": [
+              {
+                "name": "nameValue",
+                "class": "classValue"
               }
             ]
           },
@@ -1743,6 +1761,12 @@
             "resourceClaimName": "resourceClaimNameValue",
             "resourceClaimTemplateName": "resourceClaimTemplateNameValue"
           }
+        }
+      ],
+      "qosResources": [
+        {
+          "name": "nameValue",
+          "class": "classValue"
         }
       ]
     }

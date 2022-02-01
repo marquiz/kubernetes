@@ -296,6 +296,9 @@ spec:
       - name: nameValue
       limits:
         limitsKey: "0"
+      qosResources:
+      - class: classValue
+        name: nameValue
       requests:
         requestsKey: "0"
     restartPolicy: restartPolicyValue
@@ -511,6 +514,9 @@ spec:
       - name: nameValue
       limits:
         limitsKey: "0"
+      qosResources:
+      - class: classValue
+        name: nameValue
       requests:
         requestsKey: "0"
     restartPolicy: restartPolicyValue
@@ -728,6 +734,9 @@ spec:
       - name: nameValue
       limits:
         limitsKey: "0"
+      qosResources:
+      - class: classValue
+        name: nameValue
       requests:
         requestsKey: "0"
     restartPolicy: restartPolicyValue
@@ -811,6 +820,9 @@ spec:
   preemptionPolicy: preemptionPolicyValue
   priority: 25
   priorityClassName: priorityClassNameValue
+  qosResources:
+  - class: classValue
+    name: nameValue
   readinessGates:
   - conditionType: conditionTypeValue
   resourceClaims:
@@ -1193,12 +1205,18 @@ status:
         message: messageValue
         reason: reasonValue
     name: nameValue
+    qosResources:
+    - class: classValue
+      name: nameValue
     ready: true
     resources:
       claims:
       - name: nameValue
       limits:
         limitsKey: "0"
+      qosResources:
+      - class: classValue
+        name: nameValue
       requests:
         requestsKey: "0"
     restartCount: 5
@@ -1243,12 +1261,18 @@ status:
         message: messageValue
         reason: reasonValue
     name: nameValue
+    qosResources:
+    - class: classValue
+      name: nameValue
     ready: true
     resources:
       claims:
       - name: nameValue
       limits:
         limitsKey: "0"
+      qosResources:
+      - class: classValue
+        name: nameValue
       requests:
         requestsKey: "0"
     restartCount: 5
@@ -1296,12 +1320,18 @@ status:
         message: messageValue
         reason: reasonValue
     name: nameValue
+    qosResources:
+    - class: classValue
+      name: nameValue
     ready: true
     resources:
       claims:
       - name: nameValue
       limits:
         limitsKey: "0"
+      qosResources:
+      - class: classValue
+        name: nameValue
       requests:
         requestsKey: "0"
     restartCount: 5
@@ -1332,6 +1362,9 @@ status:
   podIPs:
   - ip: ipValue
   qosClass: qosClassValue
+  qosResources:
+  - class: classValue
+    name: nameValue
   reason: reasonValue
   resize: resizeValue
   resourceClaimStatuses:
