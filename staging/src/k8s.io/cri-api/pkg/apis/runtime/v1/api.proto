@@ -1507,6 +1507,35 @@ message RuntimeCondition {
 message RuntimeStatus {
     // List of current observed runtime conditions.
     repeated RuntimeCondition conditions = 1;
+    // Information about the discovered resources
+    ResourcesInfo resources = 2;
+}
+
+// ResourcesInfo contains information about the resources discovered by the
+// runtime.
+message ResourcesInfo {
+    // Pod-level QoS resources available.
+    repeated QoSResourceInfo pod_qos_resources = 1;
+    // Container-level QoS resources available.
+    repeated QoSResourceInfo container_qos_resources = 2;
+}
+
+// QoSResourceInfo contains information about one type of QoS resource.
+message QoSResourceInfo {
+    // Name of the QoS resources.
+    string Name = 1;
+    // Mutable is set to true if this resource supports in-place updates i.e.
+    // the class of a running container or sandbox can be changed.
+    bool Mutable = 2;
+    // List of classes of this QoS resource.
+    repeated QoSResourceClassInfo classes = 3;
+}
+
+// QoSResourceClassInfo contains information about one class of certain
+// QoS resource.
+message QoSResourceClassInfo {
+    // Name of the class
+    string name = 1;
 }
 
 message StatusRequest {
