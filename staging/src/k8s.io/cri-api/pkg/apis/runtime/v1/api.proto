@@ -1436,6 +1436,20 @@ message RuntimeCondition {
 message RuntimeStatus {
     // List of current observed runtime conditions.
     repeated RuntimeCondition conditions = 1;
+    // Information about the discovered resources
+    ResourcesInfo resources = 2;
+}
+
+// ResourcesInfo contains information about the resources discovered by the
+// runtime.
+message ResourcesInfo {
+    repeated ClassResourceInfo class_resources = 1;
+}
+
+// ClassResourceInfo contains information about one type of class resource.
+message ClassResourceInfo {
+    string Name = 1;
+    repeated string classes = 2;
 }
 
 message StatusRequest {
