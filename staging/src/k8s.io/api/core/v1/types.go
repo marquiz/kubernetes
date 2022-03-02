@@ -2301,7 +2301,7 @@ type Capabilities struct {
 	Drop []Capability `json:"drop,omitempty" protobuf:"bytes,2,rep,name=drop,casttype=Capability"`
 }
 
-// QoSResourceName is the name of a class-based resource.
+// QoSResourceName is the name of a QoS resource.
 type QoSResourceName string
 
 // ResourceRequirements describes the compute resource requirements.
@@ -5203,6 +5203,36 @@ type NodeConfigStatus struct {
 	Error string `json:"error,omitempty" protobuf:"bytes,4,opt,name=error"`
 }
 
+// QoSResourceClassInfo contains information about single class of one QoS
+// resource.
+type QoSResourceClassInfo struct {
+	// Name of the class.
+	Name string `json:"name" protobuf:"bytes,1,name=name"`
+}
+
+// QoSResourceInfo contains information about one QoS resource type.
+type QoSResourceInfo struct {
+	// Name of the resource.
+	Name QoSResourceName `json:"name" protobuf:"bytes,1,name=name"`
+	// Mutable is set to true if the resource supports in-place updates.
+	Mutable bool `json:"mutable,omitempty" protobuf:"varint,2,name=mutable"`
+	// Classes available for assignment.
+	// +listType=atomic
+	Classes []QoSResourceClassInfo `json:"classes" protobuf:"bytes,3,rep,name=classes"`
+}
+
+// QoSResourceStatus describes QoS resources available on the node.
+type QoSResourceStatus struct {
+	// PodQoSResources contains the QoS resources that are available for pods
+	// to be assigned to.
+	// +listType=atomic
+	PodQoSResources []QoSResourceInfo `json:"podQoSResources,omitempty" protobuf:"bytes,1,rep,name=podQoSResources"`
+	// ContainerQoSResources contains the QoS resources that are available for
+	// containers to be assigned to.
+	// +listType=atomic
+	ContainerQoSResources []QoSResourceInfo `json:"containerQoSResources,omitempty" protobuf:"bytes,2,rep,name=containerQoSResources"`
+}
+
 // NodeStatus is information about the current status of a node.
 type NodeStatus struct {
 	// Capacity represents the total resources of a node.
@@ -5257,6 +5287,11 @@ type NodeStatus struct {
 	// Status of the config assigned to the node via the dynamic Kubelet config feature.
 	// +optional
 	Config *NodeConfigStatus `json:"config,omitempty" protobuf:"bytes,11,opt,name=config"`
+	// QoSResources contains information about the QoS resources that are
+	// available on the node.
+	// +featureGate=QoSResources
+	// +optional
+	QoSResources QoSResourceStatus `json:"qosResources,omitempty" protobuf:"bytes,12,rep,name=qosResources"`
 }
 
 type UniqueVolumeName string

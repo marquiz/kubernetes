@@ -2174,7 +2174,7 @@ type Capabilities struct {
 	Drop []Capability
 }
 
-// QoSResourceName is the name of a class-based resource.
+// QoSResourceName is the name of a QoS resource.
 type QoSResourceName string
 
 // ResourceRequirements describes the compute resource requirements.
@@ -4420,6 +4420,33 @@ type NodeConfigStatus struct {
 	Error string
 }
 
+// QoSResourceClassInfo contains information about single class of one QoS
+// resource.
+type QoSResourceClassInfo struct {
+	// Name of the class.
+	Name string
+}
+
+// QoSResourceInfo contains information about one QoS resource type.
+type QoSResourceInfo struct {
+	// Name of the resource.
+	Name QoSResourceName
+	// Mutable is set to true if the resource supports in-place updates.
+	Mutable bool
+	// Classes available for assignment.
+	Classes []QoSResourceClassInfo
+}
+
+// QoSResourceStatus describes QoS resources available on the node.
+type QoSResourceStatus struct {
+	// PodQoSResources contains the QoS resources that are available for pods
+	// to be assigned to.
+	PodQoSResources []QoSResourceInfo
+	// ContainerQoSResources contains the QoS resources that are available for
+	// containers to be assigned to.
+	ContainerQoSResources []QoSResourceInfo
+}
+
 // NodeStatus is information about the current status of a node.
 type NodeStatus struct {
 	// Capacity represents the total resources of a node.
@@ -4455,6 +4482,11 @@ type NodeStatus struct {
 	// Status of the config assigned to the node via the dynamic Kubelet config feature.
 	// +optional
 	Config *NodeConfigStatus
+	// QoSResources contains information about the QoS resources that are
+	// available on the node.
+	// +featureGate=QoSResources
+	// +optional
+	QoSResources QoSResourceStatus
 }
 
 // UniqueVolumeName defines the name of attached volume
