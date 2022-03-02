@@ -4306,6 +4306,14 @@ type NodeConfigStatus struct {
 	Error string
 }
 
+// ClassResourceInfo contains information about one class resource type.
+type ClassResourceInfo struct {
+	// Name of the resource
+	Name ClassResourceName
+	// Classes available for assignment.
+	Classes []string
+}
+
 // NodeStatus is information about the current status of a node.
 type NodeStatus struct {
 	// Capacity represents the total resources of a node.
@@ -4341,6 +4349,11 @@ type NodeStatus struct {
 	// Status of the config assigned to the node via the dynamic Kubelet config feature.
 	// +optional
 	Config *NodeConfigStatus
+	// ClassResources contains the class resources that are available for
+	// containers to be assigned to.
+	// +featureGate=ClassResources
+	// +optional
+	ClassResources []ClassResourceInfo
 }
 
 // UniqueVolumeName defines the name of attached volume

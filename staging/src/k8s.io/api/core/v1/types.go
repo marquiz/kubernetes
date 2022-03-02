@@ -5058,6 +5058,15 @@ type NodeConfigStatus struct {
 	Error string `json:"error,omitempty" protobuf:"bytes,4,opt,name=error"`
 }
 
+// ClassResourceInfo contains information about one class resource type.
+type ClassResourceInfo struct {
+	// Name of the resource
+	Name ClassResourceName `json:"name" protobuf:"bytes,1,rep,name=name"`
+	// Classes available for assignment.
+	// +listType=atomic
+	Classes []string `json:"classes" protobuf:"bytes,2,rep,name=classes"`
+}
+
 // NodeStatus is information about the current status of a node.
 type NodeStatus struct {
 	// Capacity represents the total resources of a node.
@@ -5108,6 +5117,12 @@ type NodeStatus struct {
 	// Status of the config assigned to the node via the dynamic Kubelet config feature.
 	// +optional
 	Config *NodeConfigStatus `json:"config,omitempty" protobuf:"bytes,11,opt,name=config"`
+	// ClassResources contains the class resources that are available for
+	// containers to be assigned to.
+	// +featureGate=ClassResources
+	// +optional
+	// +listType=atomic
+	ClassResources []ClassResourceInfo `json:"classResources,omitempty" protobuf:"bytes,12,rep,name=classResources"`
 }
 
 type UniqueVolumeName string
