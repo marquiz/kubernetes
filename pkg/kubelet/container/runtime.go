@@ -537,6 +537,10 @@ type RuntimeStatus struct {
 	Conditions []RuntimeCondition
 	// Handlers is an array of current available handlers
 	Handlers []RuntimeHandler
+	// PodQOSResources holds information about the pod-level QoS resources of the node
+	PodQOSResources []v1.QOSResourceInfo
+	// ContainerQOSResources holds information about the container-level QoS resources of the node
+	ContainerQOSResources []v1.QOSResourceInfo
 }
 
 // GetRuntimeCondition gets a specified runtime condition from the runtime status.

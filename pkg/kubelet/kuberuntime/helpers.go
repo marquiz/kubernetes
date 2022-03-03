@@ -26,8 +26,10 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"k8s.io/klog/v2"
+	kubefeatures "k8s.io/kubernetes/pkg/features"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/security/apparmor"
 )
@@ -233,7 +235,35 @@ func toKubeRuntimeStatus(status *runtimeapi.RuntimeStatus, handlers []*runtimeap
 			SupportsUserNamespaces:          supportsUserns,
 		}
 	}
-	return &kubecontainer.RuntimeStatus{Conditions: conditions, Handlers: retHandlers}
+
+	s := kubecontainer.RuntimeStatus{Conditions: conditions, Handlers: retHandlers}
+
+	// Ignore QoS resource reported by the runtime if the feature gate is disabled
+	if utilfeature.DefaultFeatureGate.Enabled(kubefeatures.QOSResources) {
+		// Conversion function from cri api to our internal data
+		convert := func(in []*runtimeapi.QOSResourceInfo) []v1.QOSResourceInfo {
+			out := make([]v1.QOSResourceInfo, len(in))
+			for i, r := range in {
+				classes := make([]v1.QOSResourceClassInfo, len(r.Classes))
+				for j, c := range r.Classes {
+					classes[j] = v1.QOSResourceClassInfo{Name: c.Name, Capacity: int64(c.Capacity)}
+				}
+
+				out[i] = v1.QOSResourceInfo{
+					Name:    v1.QOSResourceName(r.Name),
+					Mutable: r.Mutable,
+					Classes: classes,
+				}
+			}
+			return out
+		}
+
+		allQOSResources := status.GetResources()
+		s.PodQOSResources = convert(allQOSResources.GetPodQOSResources())
+		s.ContainerQOSResources = convert(allQOSResources.GetContainerQOSResources())
+	}
+
+	return &s
 }
 
 func fieldSeccompProfile(scmp *v1.SeccompProfile, profileRootPath string, fallbackToRuntimeDefault bool) (*runtimeapi.SecurityProfile, error) {

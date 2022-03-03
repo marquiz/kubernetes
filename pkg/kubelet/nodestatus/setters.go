@@ -262,6 +262,7 @@ func MachineInfo(nodeName string,
 	capacityFunc func(localStorageCapacityIsolation bool) v1.ResourceList, // typically Kubelet.containerManager.GetCapacity
 	devicePluginResourceCapacityFunc func() (v1.ResourceList, v1.ResourceList, []string), // typically Kubelet.containerManager.GetDevicePluginResourceCapacity
 	nodeAllocatableReservationFunc func() v1.ResourceList, // typically Kubelet.containerManager.GetNodeAllocatableReservation
+	runtimeStatusFunc func(context.Context) (*kubecontainer.RuntimeStatus, error),
 	recordEventFunc func(eventType, event, message string), // typically Kubelet.recordEvent
 	localStorageCapacityIsolation bool,
 ) Setter {
@@ -387,6 +388,22 @@ func MachineInfo(nodeName string,
 				node.Status.Allocatable[v1.ResourceMemory] = allocatableMemory
 			}
 		}
+
+		// Set QoS resources
+		runtimeStatus, err := runtimeStatusFunc(ctx)
+		if err != nil {
+			klog.ErrorS(err, "Error getting runtime status")
+		} else {
+			crs := v1.QOSResourceStatus{}
+			for _, resource := range runtimeStatus.PodQOSResources {
+				crs.PodQOSResources = append(crs.PodQOSResources, *resource.DeepCopy())
+			}
+			for _, resource := range runtimeStatus.ContainerQOSResources {
+				crs.ContainerQOSResources = append(crs.ContainerQOSResources, *resource.DeepCopy())
+			}
+			node.Status.QOSResources = crs
+		}
+
 		return nil
 	}
 }
