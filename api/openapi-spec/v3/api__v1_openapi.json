@@ -3747,6 +3747,15 @@
             "description": "NodePhase is the recently observed lifecycle phase of the node. More info: https://kubernetes.io/docs/concepts/nodes/node/#phase The field is never populated, and now is deprecated.",
             "type": "string"
           },
+          "qosResources": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/io.k8s.api.core.v1.QoSResourceStatus"
+              }
+            ],
+            "default": {},
+            "description": "QoSResources contains information about the QoS resources that are available on the node."
+          },
           "volumesAttached": {
             "description": "List of volumes that are attached to the node.",
             "items": {
@@ -5691,6 +5700,84 @@
               "default": {}
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "io.k8s.api.core.v1.QoSResourceClassInfo": {
+        "description": "QoSResourceClassInfo contains information about single class of one QoS resource.",
+        "properties": {
+          "name": {
+            "default": "",
+            "description": "Name of the class.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "io.k8s.api.core.v1.QoSResourceInfo": {
+        "description": "QoSResourceInfo contains information about one QoS resource type.",
+        "properties": {
+          "classes": {
+            "description": "Classes available for assignment.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.QoSResourceClassInfo"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-type": "atomic"
+          },
+          "mutable": {
+            "description": "Mutable is set to true if the resource supports in-place updates.",
+            "type": "boolean"
+          },
+          "name": {
+            "default": "",
+            "description": "Name of the resource.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "classes"
+        ],
+        "type": "object"
+      },
+      "io.k8s.api.core.v1.QoSResourceStatus": {
+        "description": "QoSResourceStatus describes QoS resources available on the node.",
+        "properties": {
+          "containerQoSResources": {
+            "description": "ContainerQoSResources contains the QoS resources that are available for containers to be assigned to.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.QoSResourceInfo"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-type": "atomic"
+          },
+          "podQoSResources": {
+            "description": "PodQoSResources contains the QoS resources that are available for pods to be assigned to.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.QoSResourceInfo"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-type": "atomic"
           }
         },
         "type": "object"

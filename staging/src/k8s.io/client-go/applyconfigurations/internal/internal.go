@@ -5381,6 +5381,10 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: phase
       type:
         scalar: string
+    - name: qosResources
+      type:
+        namedType: io.k8s.api.core.v1.QoSResourceStatus
+      default: {}
     - name: volumesAttached
       type:
         list:
@@ -6302,6 +6306,44 @@ var schemaYAML = typed.YAMLObject(`types:
         list:
           elementType:
             namedType: io.k8s.api.core.v1.VolumeProjection
+          elementRelationship: atomic
+- name: io.k8s.api.core.v1.QoSResourceClassInfo
+  map:
+    fields:
+    - name: name
+      type:
+        scalar: string
+      default: ""
+- name: io.k8s.api.core.v1.QoSResourceInfo
+  map:
+    fields:
+    - name: classes
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.QoSResourceClassInfo
+          elementRelationship: atomic
+    - name: mutable
+      type:
+        scalar: boolean
+    - name: name
+      type:
+        scalar: string
+      default: ""
+- name: io.k8s.api.core.v1.QoSResourceStatus
+  map:
+    fields:
+    - name: containerQoSResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.QoSResourceInfo
+          elementRelationship: atomic
+    - name: podQoSResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.QoSResourceInfo
           elementRelationship: atomic
 - name: io.k8s.api.core.v1.QuobyteVolumeSource
   map:

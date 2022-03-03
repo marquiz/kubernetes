@@ -1220,6 +1220,7 @@ var map_NodeStatus = map[string]string{
 	"volumesInUse":    "List of attachable volumes in use (mounted) by the node.",
 	"volumesAttached": "List of volumes that are attached to the node.",
 	"config":          "Status of the config assigned to the node via the dynamic Kubelet config feature.",
+	"qosResources":    "QoSResources contains information about the QoS resources that are available on the node.",
 }
 
 func (NodeStatus) SwaggerDoc() map[string]string {
@@ -1857,6 +1858,36 @@ var map_ProjectedVolumeSource = map[string]string{
 
 func (ProjectedVolumeSource) SwaggerDoc() map[string]string {
 	return map_ProjectedVolumeSource
+}
+
+var map_QoSResourceClassInfo = map[string]string{
+	"":     "QoSResourceClassInfo contains information about single class of one QoS resource.",
+	"name": "Name of the class.",
+}
+
+func (QoSResourceClassInfo) SwaggerDoc() map[string]string {
+	return map_QoSResourceClassInfo
+}
+
+var map_QoSResourceInfo = map[string]string{
+	"":        "QoSResourceInfo contains information about one QoS resource type.",
+	"name":    "Name of the resource.",
+	"mutable": "Mutable is set to true if the resource supports in-place updates.",
+	"classes": "Classes available for assignment.",
+}
+
+func (QoSResourceInfo) SwaggerDoc() map[string]string {
+	return map_QoSResourceInfo
+}
+
+var map_QoSResourceStatus = map[string]string{
+	"":                      "QoSResourceStatus describes QoS resources available on the node.",
+	"podQoSResources":       "PodQoSResources contains the QoS resources that are available for pods to be assigned to.",
+	"containerQoSResources": "ContainerQoSResources contains the QoS resources that are available for containers to be assigned to.",
+}
+
+func (QoSResourceStatus) SwaggerDoc() map[string]string {
+	return map_QoSResourceStatus
 }
 
 var map_QuobyteVolumeSource = map[string]string{
