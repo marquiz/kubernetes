@@ -503,6 +503,10 @@ const (
 type RuntimeStatus struct {
 	// Conditions is an array of current observed runtime conditions.
 	Conditions []RuntimeCondition
+	// PodQoSResources holds information about the pod-level QoS resources of the node
+	PodQoSResources []v1.QoSResourceInfo
+	// ContainerQoSResources holds information about the container-level QoS resources of the node
+	ContainerQoSResources []v1.QoSResourceInfo
 }
 
 // GetRuntimeCondition gets a specified runtime condition from the runtime status.
