@@ -400,6 +400,16 @@ message CinderVolumeSource {
   optional LocalObjectReference secretRef = 4;
 }
 
+// ClassResourceInfo contains information about one class resource type.
+message ClassResourceInfo {
+  // Name of the resource
+  optional string name = 1;
+
+  // Classes available for assignment.
+  // +listType=atomic
+  repeated string classes = 2;
+}
+
 // ClientIPConfig represents the configurations of Client IP based session affinity.
 message ClientIPConfig {
   // timeoutSeconds specifies the seconds of ClientIP type session sticky time.
@@ -2483,6 +2493,13 @@ message NodeStatus {
   // Status of the config assigned to the node via the dynamic Kubelet config feature.
   // +optional
   optional NodeConfigStatus config = 11;
+
+  // ClassResources contains the class resources that are available for
+  // containers to be assigned to.
+  // +featureGate=ClassResources
+  // +optional
+  // +listType=atomic
+  repeated ClassResourceInfo classResources = 12;
 }
 
 // NodeSystemInfo is a set of ids/uuids to uniquely identify the node.

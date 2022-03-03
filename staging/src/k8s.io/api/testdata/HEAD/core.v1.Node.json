@@ -156,6 +156,14 @@
         }
       },
       "error": "errorValue"
-    }
+    },
+    "classResources": [
+      {
+        "name": "nameValue",
+        "classes": [
+          "classesValue"
+        ]
+      }
+    ]
   }
 }

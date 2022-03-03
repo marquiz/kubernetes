@@ -3757,6 +3757,19 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
       default: ""
+- name: io.k8s.api.core.v1.ClassResourceInfo
+  map:
+    fields:
+    - name: classes
+      type:
+        list:
+          elementType:
+            scalar: string
+          elementRelationship: atomic
+    - name: name
+      type:
+        scalar: string
+      default: ""
 - name: io.k8s.api.core.v1.ClientIPConfig
   map:
     fields:
@@ -5185,6 +5198,12 @@ var schemaYAML = typed.YAMLObject(`types:
         map:
           elementType:
             namedType: io.k8s.apimachinery.pkg.api.resource.Quantity
+    - name: classResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.ClassResourceInfo
+          elementRelationship: atomic
     - name: conditions
       type:
         list:

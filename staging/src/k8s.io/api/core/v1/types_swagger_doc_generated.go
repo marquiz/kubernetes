@@ -209,6 +209,16 @@ func (CinderVolumeSource) SwaggerDoc() map[string]string {
 	return map_CinderVolumeSource
 }
 
+var map_ClassResourceInfo = map[string]string{
+	"":        "ClassResourceInfo contains information about one class resource type.",
+	"name":    "Name of the resource",
+	"classes": "Classes available for assignment.",
+}
+
+func (ClassResourceInfo) SwaggerDoc() map[string]string {
+	return map_ClassResourceInfo
+}
+
 var map_ClientIPConfig = map[string]string{
 	"":               "ClientIPConfig represents the configurations of Client IP based session affinity.",
 	"timeoutSeconds": "timeoutSeconds specifies the seconds of ClientIP type session sticky time. The value must be >0 && <=86400(for 1 day) if ServiceAffinity == \"ClientIP\". Default value is 10800(for 3 hours).",
@@ -1210,6 +1220,7 @@ var map_NodeStatus = map[string]string{
 	"volumesInUse":    "List of attachable volumes in use (mounted) by the node.",
 	"volumesAttached": "List of volumes that are attached to the node.",
 	"config":          "Status of the config assigned to the node via the dynamic Kubelet config feature.",
+	"classResources":  "ClassResources contains the class resources that are available for containers to be assigned to.",
 }
 
 func (NodeStatus) SwaggerDoc() map[string]string {

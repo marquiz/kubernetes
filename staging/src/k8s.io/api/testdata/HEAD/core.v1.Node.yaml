@@ -59,6 +59,10 @@ status:
     allocatableKey: "0"
   capacity:
     capacityKey: "0"
+  classResources:
+  - classes:
+    - classesValue
+    name: nameValue
   conditions:
   - lastHeartbeatTime: "2003-01-01T01:01:01Z"
     lastTransitionTime: "2004-01-01T01:01:01Z"
