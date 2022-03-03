@@ -245,6 +245,7 @@ func MachineInfo(nodeName string,
 	capacityFunc func(localStorageCapacityIsolation bool) v1.ResourceList, // typically Kubelet.containerManager.GetCapacity
 	devicePluginResourceCapacityFunc func() (v1.ResourceList, v1.ResourceList, []string), // typically Kubelet.containerManager.GetDevicePluginResourceCapacity
 	nodeAllocatableReservationFunc func() v1.ResourceList, // typically Kubelet.containerManager.GetNodeAllocatableReservation
+	runtimeStatusFunc func() (*kubecontainer.RuntimeStatus, error),
 	recordEventFunc func(eventType, event, message string), // typically Kubelet.recordEvent
 	localStorageCapacityIsolation bool,
 ) Setter {
@@ -370,6 +371,21 @@ func MachineInfo(nodeName string,
 				node.Status.Allocatable[v1.ResourceMemory] = allocatableMemory
 			}
 		}
+
+		// Set class resources
+		node.Status.ClassResources = []v1.ClassResourceInfo{}
+		runtimeStatus, err := runtimeStatusFunc()
+		if err != nil {
+			klog.ErrorS(err, "Error getting runtime status")
+		} else {
+			for _, resource := range runtimeStatus.ClassResources {
+				node.Status.ClassResources = append(node.Status.ClassResources, v1.ClassResourceInfo{
+					Name:    v1.ClassResourceName(resource.Name),
+					Classes: resource.Classes,
+				})
+			}
+		}
+
 		return nil
 	}
 }

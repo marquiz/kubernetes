@@ -24,8 +24,10 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"k8s.io/klog/v2"
+	kubefeatures "k8s.io/kubernetes/pkg/features"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 )
 
@@ -207,7 +209,23 @@ func toKubeRuntimeStatus(status *runtimeapi.RuntimeStatus) *kubecontainer.Runtim
 			Message: c.Message,
 		})
 	}
-	return &kubecontainer.RuntimeStatus{Conditions: conditions}
+
+	s := kubecontainer.RuntimeStatus{Conditions: conditions}
+
+	// Ignore class resource reported by the runtime if the feature gate is disabled
+	if utilfeature.DefaultFeatureGate.Enabled(kubefeatures.ClassResources) {
+		srcClassResources := status.GetResources().GetClassResources()
+		classResources := make([]kubecontainer.ClassResourceInfo, len(srcClassResources))
+		for i, r := range srcClassResources {
+			classResources[i] = kubecontainer.ClassResourceInfo{
+				Name:    r.Name,
+				Classes: r.Classes,
+			}
+		}
+		s.ClassResources = classResources
+	}
+
+	return &s
 }
 
 func fieldProfile(scmp *v1.SeccompProfile, profileRootPath string, fallbackToRuntimeDefault bool) string {

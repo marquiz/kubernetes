@@ -488,7 +488,8 @@ const (
 // RuntimeStatus contains the status of the runtime.
 type RuntimeStatus struct {
 	// Conditions is an array of current observed runtime conditions.
-	Conditions []RuntimeCondition
+	Conditions     []RuntimeCondition
+	ClassResources []ClassResourceInfo
 }
 
 // GetRuntimeCondition gets a specified runtime condition from the runtime status.
@@ -521,6 +522,11 @@ type RuntimeCondition struct {
 	Reason string
 	// Message is human readable message indicating details about last transition.
 	Message string
+}
+
+type ClassResourceInfo struct {
+	Name    string
+	Classes []string
 }
 
 // String formats the runtime condition into human readable string.
