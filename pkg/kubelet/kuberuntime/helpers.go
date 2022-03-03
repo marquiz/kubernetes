@@ -25,8 +25,10 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"k8s.io/klog/v2"
+	kubefeatures "k8s.io/kubernetes/pkg/features"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 )
 
@@ -208,7 +210,35 @@ func toKubeRuntimeStatus(status *runtimeapi.RuntimeStatus) *kubecontainer.Runtim
 			Message: c.Message,
 		})
 	}
-	return &kubecontainer.RuntimeStatus{Conditions: conditions}
+
+	s := kubecontainer.RuntimeStatus{Conditions: conditions}
+
+	// Ignore QoS resource reported by the runtime if the feature gate is disabled
+	if utilfeature.DefaultFeatureGate.Enabled(kubefeatures.QoSResources) {
+		// Conversion function from cri api to our internal data
+		convert := func(in []*runtimeapi.QoSResourceInfo) []v1.QoSResourceInfo {
+			out := make([]v1.QoSResourceInfo, len(in))
+			for i, r := range in {
+				classes := make([]v1.QoSResourceClassInfo, len(r.Classes))
+				for j, c := range r.Classes {
+					classes[j] = v1.QoSResourceClassInfo{Name: c.Name, Capacity: int64(c.Capacity)}
+				}
+
+				out[i] = v1.QoSResourceInfo{
+					Name:    v1.QoSResourceName(r.Name),
+					Mutable: r.Mutable,
+					Classes: classes,
+				}
+			}
+			return out
+		}
+
+		allQoSResources := status.GetResources()
+		s.PodQoSResources = convert(allQoSResources.GetPodQosResources())
+		s.ContainerQoSResources = convert(allQoSResources.GetContainerQosResources())
+	}
+
+	return &s
 }
 
 func fieldProfile(scmp *v1.SeccompProfile, profileRootPath string, fallbackToRuntimeDefault bool) string {
