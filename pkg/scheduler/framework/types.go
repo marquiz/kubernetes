@@ -435,12 +435,17 @@ type Resource struct {
 	AllowedPodNumber int
 	// ScalarResources
 	ScalarResources map[v1.ResourceName]int64
+	// ClassResources holds the available class resources
+	ClassResources map[v1.ClassResourceName]resourceClasses
 }
 
-// NewResource creates a Resource from ResourceList
-func NewResource(rl v1.ResourceList) *Resource {
+type resourceClasses map[string]struct{}
+
+// NewResource creates a Resource
+func NewResource(rl v1.ResourceList, crl []v1.ClassResourceInfo) *Resource {
 	r := &Resource{}
 	r.Add(rl)
+	r.SetClassResources(crl)
 	return r
 }
 
@@ -468,6 +473,41 @@ func (r *Resource) Add(rl v1.ResourceList) {
 	}
 }
 
+func (r *Resource) SetClassResources(crl []v1.ClassResourceInfo) {
+	if r == nil {
+		return
+	}
+
+	r.ClassResources = make(map[v1.ClassResourceName]resourceClasses, len(crl))
+	for _, cr := range crl {
+		classes := make(resourceClasses, len(cr.Classes))
+		for _, c := range cr.Classes {
+			classes[c] = struct{}{}
+		}
+		r.ClassResources[cr.Name] = classes
+	}
+}
+
+func (r *Resource) AddClassResources(crl map[v1.ClassResourceName]string) {
+	if r == nil {
+		return
+	}
+
+	for name, class := range crl {
+		r.AddClassResource(name, class)
+	}
+}
+
+func (r *Resource) AddClassResource(name v1.ClassResourceName, class string) {
+	if r.ClassResources == nil {
+		r.ClassResources = make(map[v1.ClassResourceName]resourceClasses)
+	}
+	if r.ClassResources[name] == nil {
+		r.ClassResources[name] = make(resourceClasses)
+	}
+	r.ClassResources[name][class] = struct{}{}
+}
+
 // Clone returns a copy of this resource.
 func (r *Resource) Clone() *Resource {
 	res := &Resource{
@@ -480,6 +520,16 @@ func (r *Resource) Clone() *Resource {
 		res.ScalarResources = make(map[v1.ResourceName]int64)
 		for k, v := range r.ScalarResources {
 			res.ScalarResources[k] = v
+		}
+	}
+	if r.ClassResources != nil {
+		res.ClassResources = make(map[v1.ClassResourceName]resourceClasses, len(r.ClassResources))
+		for k, v := range r.ClassResources {
+			classes := make(resourceClasses, len(v))
+			for c := range v {
+				classes[c] = struct{}{}
+			}
+			res.ClassResources[k] = classes
 		}
 	}
 	return res
@@ -796,7 +846,7 @@ func (n *NodeInfo) updatePVCRefCounts(pod *v1.Pod, add bool) {
 // SetNode sets the overall node information.
 func (n *NodeInfo) SetNode(node *v1.Node) {
 	n.node = node
-	n.Allocatable = NewResource(node.Status.Allocatable)
+	n.Allocatable = NewResource(node.Status.Allocatable, node.Status.ClassResources)
 	n.Generation = nextGeneration()
 }
 

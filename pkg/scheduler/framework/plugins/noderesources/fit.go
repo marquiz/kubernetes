@@ -159,13 +159,16 @@ func NewFit(plArgs runtime.Object, h framework.Handle, fts feature.Features) (fr
 // Result: CPU: 3, Memory: 3G
 func computePodResourceRequest(pod *v1.Pod) *preFilterState {
 	result := &preFilterState{}
+	result.AddClassResources(pod.Spec.Resources.Classes)
 	for _, container := range pod.Spec.Containers {
 		result.Add(container.Resources.Requests)
+		result.AddClassResources(container.Resources.Classes)
 	}
 
 	// take max_resource(sum_pod, any_init_container)
 	for _, container := range pod.Spec.InitContainers {
 		result.SetMaxResource(container.Resources.Requests)
+		result.AddClassResources(container.Resources.Classes)
 	}
 
 	// If Overhead is being utilized, add to the total requests for the pod
@@ -262,6 +265,30 @@ func fitsRequest(podRequest *preFilterState, nodeInfo *framework.NodeInfo, ignor
 			Used:         int64(len(nodeInfo.Pods)),
 			Capacity:     int64(allowedPodNumber),
 		})
+	}
+
+	for rName, rClasses := range podRequest.ClassResources {
+		if availableClasses, ok := nodeInfo.Allocatable.ClassResources[rName]; !ok {
+			insufficientResources = append(insufficientResources, InsufficientResource{
+				ResourceName: v1.ResourceName(rName),
+				Reason:       fmt.Sprintf("Unavailable class resource type %q", rName),
+				Requested:    1,
+				Used:         0,
+				Capacity:     0,
+			})
+		} else {
+			for class := range rClasses {
+				if _, ok := availableClasses[class]; !ok {
+					insufficientResources = append(insufficientResources, InsufficientResource{
+						ResourceName: v1.ResourceName(rName),
+						Reason:       fmt.Sprintf("Unavailable %s class %q", rName, class),
+						Requested:    1,
+						Used:         0,
+						Capacity:     0,
+					})
+				}
+			}
+		}
 	}
 
 	if podRequest.MilliCPU == 0 &&

@@ -50,6 +50,7 @@ func NewInTreeRegistry() runtime.Registry {
 		EnableMinDomainsInPodTopologySpread:          feature.DefaultFeatureGate.Enabled(features.MinDomainsInPodTopologySpread),
 		EnableNodeInclusionPolicyInPodTopologySpread: feature.DefaultFeatureGate.Enabled(features.NodeInclusionPolicyInPodTopologySpread),
 		EnableMatchLabelKeysInPodTopologySpread:      feature.DefaultFeatureGate.Enabled(features.MatchLabelKeysInPodTopologySpread),
+		EnableClassResources:                         feature.DefaultFeatureGate.Enabled(features.ClassResources),
 	}
 
 	return runtime.Registry{
