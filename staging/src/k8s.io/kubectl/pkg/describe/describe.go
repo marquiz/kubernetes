@@ -875,6 +875,18 @@ func describePod(pod *corev1.Pod, events *corev1.EventList) (string, error) {
 		}
 		describeVolumes(pod.Spec.Volumes, w, "")
 		w.Write(LEVEL_0, "QoS Class:\t%s\n", qos.GetPodQOS(pod))
+
+		if len(pod.Spec.QOSResources) > 0 {
+			w.Write(LEVEL_0, "Pod QoS Resources:\n")
+
+			sort.Slice(pod.Spec.QOSResources, func(i, j int) bool {
+				return pod.Spec.QOSResources[i].Name < pod.Spec.QOSResources[j].Name
+			})
+			for _, qr := range pod.Spec.QOSResources {
+				w.Write(LEVEL_1, "%s:\t%s\n", qr.Name, qr.Class)
+			}
+		}
+
 		printLabelsMultiline(w, "Node-Selectors", pod.Spec.NodeSelector)
 		printPodTolerationsMultiline(w, "Tolerations", pod.Spec.Tolerations)
 		describeTopologySpreadConstraints(pod.Spec.TopologySpreadConstraints, w, "")
@@ -1894,6 +1906,17 @@ func describeContainerResource(container corev1.Container, w PrefixWriter) {
 	for _, name := range SortedResourceNames(resources.Requests) {
 		quantity := resources.Requests[name]
 		w.Write(LEVEL_3, "%s:\t%s\n", name, quantity.String())
+	}
+
+	if len(resources.QOSResources) > 0 {
+		w.Write(LEVEL_2, "Container QoS Resources:\n")
+
+		sort.Slice(resources.QOSResources, func(i, j int) bool {
+			return resources.QOSResources[i].Name < resources.QOSResources[j].Name
+		})
+		for _, qr := range resources.QOSResources {
+			w.Write(LEVEL_3, "%s:\t%s\n", qr.Name, qr.Class)
+		}
 	}
 }
 
@@ -3731,6 +3754,31 @@ func describeNode(node *corev1.Node, nodeNonTerminatedPodsList *corev1.PodList, 
 		if len(node.Status.Allocatable) > 0 {
 			w.Write(LEVEL_0, "Allocatable:\n")
 			printResourceList(node.Status.Allocatable)
+		}
+
+		printQOSResources := func(resourceList []corev1.QOSResourceInfo) {
+			w.Write(LEVEL_1, "Name\tMutable\tClasses\n")
+			w.Write(LEVEL_1, "----\t-------\t-------\n")
+
+			sort.Slice(resourceList, func(i, j int) bool { return resourceList[i].Name < resourceList[j].Name })
+			for _, resource := range resourceList {
+				mutable := map[bool]string{false: "No", true: "Yes"}[resource.Mutable]
+				classes := make([]string, len(resource.Classes))
+				for i, c := range resource.Classes {
+					classes[i] = c.Name
+				}
+
+				w.Write(LEVEL_1, "%s\t%s\t%s\n", resource.Name, mutable, strings.Join(classes, ", "))
+			}
+		}
+
+		if len(node.Status.QOSResources.PodQOSResources) > 0 {
+			w.Write(LEVEL_0, "Pod QoS Resources:\n")
+			printQOSResources(node.Status.QOSResources.PodQOSResources)
+		}
+		if len(node.Status.QOSResources.ContainerQOSResources) > 0 {
+			w.Write(LEVEL_0, "Container QoS Resources:\n")
+			printQOSResources(node.Status.QOSResources.ContainerQOSResources)
 		}
 
 		w.Write(LEVEL_0, "System Info:\n")
