@@ -854,6 +854,13 @@ func describePod(pod *corev1.Pod, events *corev1.EventList) (string, error) {
 		} else {
 			w.Write(LEVEL_0, "QoS Class:\t%s\n", qos.GetPodQOS(pod))
 		}
+		if len(pod.Spec.Resources.QoSResources) > 0 {
+			w.Write(LEVEL_0, "Pod QoS Resources:\n")
+
+			for _, name := range sortedQoSResourceNames(pod.Spec.Resources.QoSResources) {
+				w.Write(LEVEL_1, "%s:\t%s\n", name, pod.Spec.Resources.QoSResources[corev1.QoSResourceName(name)])
+			}
+		}
 		printLabelsMultiline(w, "Node-Selectors", pod.Spec.NodeSelector)
 		printPodTolerationsMultiline(w, "Tolerations", pod.Spec.Tolerations)
 		describeTopologySpreadConstraints(pod.Spec.TopologySpreadConstraints, w, "")
@@ -1842,6 +1849,14 @@ func describeContainerResource(container corev1.Container, w PrefixWriter) {
 	for _, name := range SortedResourceNames(resources.Requests) {
 		quantity := resources.Requests[name]
 		w.Write(LEVEL_3, "%s:\t%s\n", name, quantity.String())
+	}
+
+	if len(resources.QoSResources) > 0 {
+		w.Write(LEVEL_2, "Container QoS Resources:\n")
+
+		for _, name := range sortedQoSResourceNames(resources.QoSResources) {
+			w.Write(LEVEL_3, "%s:\t%s\n", name, resources.QoSResources[corev1.QoSResourceName(name)])
+		}
 	}
 }
 
@@ -3711,6 +3726,31 @@ func describeNode(node *corev1.Node, nodeNonTerminatedPodsList *corev1.PodList, 
 			printResourceList(node.Status.Allocatable)
 		}
 
+		printQoSResources := func(resourceList []corev1.QoSResourceInfo) {
+			w.Write(LEVEL_1, "Name\tMutable\tClasses\n")
+			w.Write(LEVEL_1, "----\t-------\t-------\n")
+
+			sort.Slice(resourceList, func(i, j int) bool { return resourceList[i].Name < resourceList[j].Name })
+			for _, resource := range resourceList {
+				mutable := map[bool]string{false: "No", true: "Yes"}[resource.Mutable]
+				classes := make([]string, len(resource.Classes))
+				for i, c := range resource.Classes {
+					classes[i] = c.Name
+				}
+
+				w.Write(LEVEL_1, "%s\t%s\t%s\n", resource.Name, mutable, strings.Join(classes, ", "))
+			}
+		}
+
+		if len(node.Status.QoSResources.PodQoSResources) > 0 {
+			w.Write(LEVEL_0, "Pod QoS Resources:\n")
+			printQoSResources(node.Status.QoSResources.PodQoSResources)
+		}
+		if len(node.Status.QoSResources.ContainerQoSResources) > 0 {
+			w.Write(LEVEL_0, "Container QoS Resources:\n")
+			printQoSResources(node.Status.QoSResources.ContainerQoSResources)
+		}
+
 		w.Write(LEVEL_0, "System Info:\n")
 		w.Write(LEVEL_0, "  Machine ID:\t%s\n", node.Status.NodeInfo.MachineID)
 		w.Write(LEVEL_0, "  System UUID:\t%s\n", node.Status.NodeInfo.SystemUUID)
@@ -5241,6 +5281,16 @@ func SortedResourceNames(list corev1.ResourceList) []corev1.ResourceName {
 		resources = append(resources, res)
 	}
 	sort.Sort(SortableResourceNames(resources))
+	return resources
+}
+
+// sortedQoSResourceNames returns the sorted resource names of a QoS resource list.
+func sortedQoSResourceNames(list map[corev1.QoSResourceName]string) []string {
+	resources := make([]string, 0, len(list))
+	for res := range list {
+		resources = append(resources, string(res))
+	}
+	sort.Strings(resources)
 	return resources
 }
 
