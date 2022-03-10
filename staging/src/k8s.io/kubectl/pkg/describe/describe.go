@@ -845,6 +845,13 @@ func describePod(pod *corev1.Pod, events *corev1.EventList) (string, error) {
 		} else {
 			w.Write(LEVEL_0, "QoS Class:\t%s\n", qos.GetPodQOS(pod))
 		}
+		if len(pod.Spec.Resources.Classes) > 0 {
+			w.Write(LEVEL_0, "Class Resources:\n")
+
+			for _, name := range sortedClassResourceNames(pod.Spec.Resources.Classes) {
+				w.Write(LEVEL_1, "%s:\t%s\n", name, pod.Spec.Resources.Classes[corev1.ClassResourceName(name)])
+			}
+		}
 		printLabelsMultiline(w, "Node-Selectors", pod.Spec.NodeSelector)
 		printPodTolerationsMultiline(w, "Tolerations", pod.Spec.Tolerations)
 		describeTopologySpreadConstraints(pod.Spec.TopologySpreadConstraints, w, "")
@@ -1805,6 +1812,14 @@ func describeContainerResource(container corev1.Container, w PrefixWriter) {
 	for _, name := range SortedResourceNames(resources.Requests) {
 		quantity := resources.Requests[name]
 		w.Write(LEVEL_3, "%s:\t%s\n", name, quantity.String())
+	}
+
+	if len(resources.Classes) > 0 {
+		w.Write(LEVEL_2, "Class Resources:\n")
+
+		for _, name := range sortedClassResourceNames(resources.Classes) {
+			w.Write(LEVEL_3, "%s:\t%s\n", name, resources.Classes[corev1.ClassResourceName(name)])
+		}
 	}
 }
 
@@ -3673,6 +3688,15 @@ func describeNode(node *corev1.Node, nodeNonTerminatedPodsList *corev1.PodList, 
 			w.Write(LEVEL_0, "Allocatable:\n")
 			printResourceList(node.Status.Allocatable)
 		}
+		if len(node.Status.ClassResources) > 0 {
+			crl := node.Status.ClassResources
+			sort.Slice(crl, func(i, j int) bool { return crl[i].Name < crl[j].Name })
+
+			w.Write(LEVEL_0, "Class Resources:\n")
+			for _, resource := range crl {
+				w.Write(LEVEL_1, "%s:\t%s\n", resource.Name, strings.Join(resource.Classes, ", "))
+			}
+		}
 
 		w.Write(LEVEL_0, "System Info:\n")
 		w.Write(LEVEL_0, "  Machine ID:\t%s\n", node.Status.NodeInfo.MachineID)
@@ -5346,6 +5370,16 @@ func SortedResourceNames(list corev1.ResourceList) []corev1.ResourceName {
 		resources = append(resources, res)
 	}
 	sort.Sort(SortableResourceNames(resources))
+	return resources
+}
+
+// sortedClassResourceNames returns the sorted resource names of a class resource list.
+func sortedClassResourceNames(list map[corev1.ClassResourceName]string) []string {
+	resources := make([]string, 0, len(list))
+	for res := range list {
+		resources = append(resources, string(res))
+	}
+	sort.Strings(resources)
 	return resources
 }
 
