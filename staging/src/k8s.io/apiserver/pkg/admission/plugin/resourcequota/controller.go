@@ -577,6 +577,12 @@ func CheckRequest(quotas []corev1.ResourceQuota, a admission.Attributes, evaluat
 
 		// update to the new usage number
 		outQuotas[index].Status.Used = newUsage
+
+		// Check QoS resources
+		if err := evaluator.EvaluateQoSResources(resourceQuota.Status.QoSResources, inputObject); err != nil {
+			return nil, admission.NewForbidden(a,
+				fmt.Errorf("disallowed QoS resources in quota: %s: %w", resourceQuota.Name, err))
+		}
 	}
 
 	return outQuotas, nil
