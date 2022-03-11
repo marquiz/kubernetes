@@ -5819,6 +5819,40 @@ type ResourceQuotaSpec struct {
 	// but expressed using ScopeSelectorOperator in combination with possible values.
 	// +optional
 	ScopeSelector *ScopeSelector
+	// QOSResources contains the desired set of allowed QoS resources.
+	// +featureGate=QOSResources
+	// +optional
+	QOSResources QOSResourceQuota
+}
+
+// QOSResourceQuota contains the allowed QoS resources.
+type QOSResourceQuota struct {
+	// Pod contains the allowed QoS resources for pods.
+	// +featureGate=QOSResources
+	// +optional
+	Pod []AllowedQOSResource
+	// Container contains the allowed QoS resources for pods.
+	// +featureGate=QOSResources
+	// +optional
+	Container []AllowedQOSResource
+}
+
+// AllowedQOSResource specifies access to one QoS resources type.
+type AllowedQOSResource struct {
+	// Name of the resource.
+	Name QOSResourceName
+	// Allowed classes.
+	Classes []AllowedQOSResourceClass
+}
+
+// AllowedQOSResourceClass specifies one allowed class of a QoS resource and
+// possible limits for its usage.
+type AllowedQOSResourceClass struct {
+	// Name of the class.
+	Name string
+	// Capacity is the hard limit for usage of the class.
+	// +optional
+	Capacity int64
 }
 
 // ScopeSelector represents the AND of the selectors represented
@@ -5865,6 +5899,14 @@ type ResourceQuotaStatus struct {
 	// Used is the current observed total usage of the resource in the namespace
 	// +optional
 	Used ResourceList
+	// QOSResources contains the enforced set of available QoS resources.
+	// +featureGate=QOSResources
+	// +optional
+	QOSResources QOSResourceQuota
+	// QOSResourcesUsage contains the observed usage of QoS resources in the namespace.
+	// +featureGate=QOSResources
+	// +optional
+	QOSResourcesUsage QOSResourceQuota
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
