@@ -1989,10 +1989,11 @@ func (ResourceQuotaList) SwaggerDoc() map[string]string {
 }
 
 var map_ResourceQuotaSpec = map[string]string{
-	"":              "ResourceQuotaSpec defines the desired hard limits to enforce for Quota.",
-	"hard":          "hard is the set of desired hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
-	"scopes":        "A collection of filters that must match each object tracked by a quota. If not specified, the quota matches all objects.",
-	"scopeSelector": "scopeSelector is also a collection of filters like scopes that must match each object tracked by a quota but expressed using ScopeSelectorOperator in combination with possible values. For a resource to match, both scopes AND scopeSelector (if specified in spec), must be matched.",
+	"":               "ResourceQuotaSpec defines the desired hard limits to enforce for Quota.",
+	"hard":           "hard is the set of desired hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
+	"scopes":         "A collection of filters that must match each object tracked by a quota. If not specified, the quota matches all objects.",
+	"scopeSelector":  "scopeSelector is also a collection of filters like scopes that must match each object tracked by a quota but expressed using ScopeSelectorOperator in combination with possible values. For a resource to match, both scopes AND scopeSelector (if specified in spec), must be matched.",
+	"classResources": "ClassResources contains the allowed class resources.",
 }
 
 func (ResourceQuotaSpec) SwaggerDoc() map[string]string {
@@ -2000,9 +2001,10 @@ func (ResourceQuotaSpec) SwaggerDoc() map[string]string {
 }
 
 var map_ResourceQuotaStatus = map[string]string{
-	"":     "ResourceQuotaStatus defines the enforced hard limits and observed use.",
-	"hard": "Hard is the set of enforced hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
-	"used": "Used is the current observed total usage of the resource in the namespace.",
+	"":               "ResourceQuotaStatus defines the enforced hard limits and observed use.",
+	"hard":           "Hard is the set of enforced hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
+	"used":           "Used is the current observed total usage of the resource in the namespace.",
+	"classResources": "ClassResources contains the enforced set of class resources available.",
 }
 
 func (ResourceQuotaStatus) SwaggerDoc() map[string]string {

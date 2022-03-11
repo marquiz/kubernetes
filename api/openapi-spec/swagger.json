@@ -8185,6 +8185,14 @@
     "io.k8s.api.core.v1.ResourceQuotaSpec": {
       "description": "ResourceQuotaSpec defines the desired hard limits to enforce for Quota.",
       "properties": {
+        "classResources": {
+          "description": "ClassResources contains the allowed class resources.",
+          "items": {
+            "$ref": "#/definitions/io.k8s.api.core.v1.ClassResourceInfo"
+          },
+          "type": "array",
+          "x-kubernetes-list-type": "atomic"
+        },
         "hard": {
           "additionalProperties": {
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
@@ -8209,6 +8217,14 @@
     "io.k8s.api.core.v1.ResourceQuotaStatus": {
       "description": "ResourceQuotaStatus defines the enforced hard limits and observed use.",
       "properties": {
+        "classResources": {
+          "description": "ClassResources contains the enforced set of class resources available.",
+          "items": {
+            "$ref": "#/definitions/io.k8s.api.core.v1.ClassResourceInfo"
+          },
+          "type": "array",
+          "x-kubernetes-list-type": "atomic"
+        },
         "hard": {
           "additionalProperties": {
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"

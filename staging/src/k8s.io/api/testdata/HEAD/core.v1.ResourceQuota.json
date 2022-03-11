@@ -60,7 +60,15 @@
           ]
         }
       ]
-    }
+    },
+    "classResources": [
+      {
+        "name": "nameValue",
+        "classes": [
+          "classesValue"
+        ]
+      }
+    ]
   },
   "status": {
     "hard": {
@@ -68,6 +76,14 @@
     },
     "used": {
       "usedKey": "0"
-    }
+    },
+    "classResources": [
+      {
+        "name": "nameValue",
+        "classes": [
+          "classesValue"
+        ]
+      }
+    ]
   }
 }

@@ -25,8 +25,9 @@ import (
 // ResourceQuotaStatusApplyConfiguration represents an declarative configuration of the ResourceQuotaStatus type for use
 // with apply.
 type ResourceQuotaStatusApplyConfiguration struct {
-	Hard *v1.ResourceList `json:"hard,omitempty"`
-	Used *v1.ResourceList `json:"used,omitempty"`
+	Hard           *v1.ResourceList                      `json:"hard,omitempty"`
+	Used           *v1.ResourceList                      `json:"used,omitempty"`
+	ClassResources []ClassResourceInfoApplyConfiguration `json:"classResources,omitempty"`
 }
 
 // ResourceQuotaStatusApplyConfiguration constructs an declarative configuration of the ResourceQuotaStatus type for use with
@@ -48,5 +49,18 @@ func (b *ResourceQuotaStatusApplyConfiguration) WithHard(value v1.ResourceList) 
 // If called multiple times, the Used field is set to the value of the last call.
 func (b *ResourceQuotaStatusApplyConfiguration) WithUsed(value v1.ResourceList) *ResourceQuotaStatusApplyConfiguration {
 	b.Used = &value
+	return b
+}
+
+// WithClassResources adds the given value to the ClassResources field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the ClassResources field.
+func (b *ResourceQuotaStatusApplyConfiguration) WithClassResources(values ...*ClassResourceInfoApplyConfiguration) *ResourceQuotaStatusApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithClassResources")
+		}
+		b.ClassResources = append(b.ClassResources, *values[i])
+	}
 	return b
 }

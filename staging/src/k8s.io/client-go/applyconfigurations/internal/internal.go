@@ -6331,6 +6331,12 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: io.k8s.api.core.v1.ResourceQuotaSpec
   map:
     fields:
+    - name: classResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.ClassResourceInfo
+          elementRelationship: atomic
     - name: hard
       type:
         map:
@@ -6348,6 +6354,12 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: io.k8s.api.core.v1.ResourceQuotaStatus
   map:
     fields:
+    - name: classResources
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.ClassResourceInfo
+          elementRelationship: atomic
     - name: hard
       type:
         map:

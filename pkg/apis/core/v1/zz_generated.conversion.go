@@ -7027,6 +7027,7 @@ func autoConvert_v1_ResourceQuotaSpec_To_core_ResourceQuotaSpec(in *v1.ResourceQ
 	out.Hard = *(*core.ResourceList)(unsafe.Pointer(&in.Hard))
 	out.Scopes = *(*[]core.ResourceQuotaScope)(unsafe.Pointer(&in.Scopes))
 	out.ScopeSelector = (*core.ScopeSelector)(unsafe.Pointer(in.ScopeSelector))
+	out.ClassResources = *(*[]core.ClassResourceInfo)(unsafe.Pointer(&in.ClassResources))
 	return nil
 }
 
@@ -7039,6 +7040,7 @@ func autoConvert_core_ResourceQuotaSpec_To_v1_ResourceQuotaSpec(in *core.Resourc
 	out.Hard = *(*v1.ResourceList)(unsafe.Pointer(&in.Hard))
 	out.Scopes = *(*[]v1.ResourceQuotaScope)(unsafe.Pointer(&in.Scopes))
 	out.ScopeSelector = (*v1.ScopeSelector)(unsafe.Pointer(in.ScopeSelector))
+	out.ClassResources = *(*[]v1.ClassResourceInfo)(unsafe.Pointer(&in.ClassResources))
 	return nil
 }
 
@@ -7050,6 +7052,7 @@ func Convert_core_ResourceQuotaSpec_To_v1_ResourceQuotaSpec(in *core.ResourceQuo
 func autoConvert_v1_ResourceQuotaStatus_To_core_ResourceQuotaStatus(in *v1.ResourceQuotaStatus, out *core.ResourceQuotaStatus, s conversion.Scope) error {
 	out.Hard = *(*core.ResourceList)(unsafe.Pointer(&in.Hard))
 	out.Used = *(*core.ResourceList)(unsafe.Pointer(&in.Used))
+	out.ClassResources = *(*[]core.ClassResourceInfo)(unsafe.Pointer(&in.ClassResources))
 	return nil
 }
 
@@ -7061,6 +7064,7 @@ func Convert_v1_ResourceQuotaStatus_To_core_ResourceQuotaStatus(in *v1.ResourceQ
 func autoConvert_core_ResourceQuotaStatus_To_v1_ResourceQuotaStatus(in *core.ResourceQuotaStatus, out *v1.ResourceQuotaStatus, s conversion.Scope) error {
 	out.Hard = *(*v1.ResourceList)(unsafe.Pointer(&in.Hard))
 	out.Used = *(*v1.ResourceList)(unsafe.Pointer(&in.Used))
+	out.ClassResources = *(*[]v1.ClassResourceInfo)(unsafe.Pointer(&in.ClassResources))
 	return nil
 }
 

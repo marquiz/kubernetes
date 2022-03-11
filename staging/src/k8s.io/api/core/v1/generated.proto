@@ -4404,6 +4404,12 @@ message ResourceQuotaSpec {
   // For a resource to match, both scopes AND scopeSelector (if specified in spec), must be matched.
   // +optional
   optional ScopeSelector scopeSelector = 3;
+
+  // ClassResources contains the allowed class resources.
+  // +featureGate=ClassResources
+  // +optional
+  // +listType=atomic
+  repeated ClassResourceInfo classResources = 4;
 }
 
 // ResourceQuotaStatus defines the enforced hard limits and observed use.
@@ -4416,6 +4422,12 @@ message ResourceQuotaStatus {
   // Used is the current observed total usage of the resource in the namespace.
   // +optional
   map<string, k8s.io.apimachinery.pkg.api.resource.Quantity> used = 2;
+
+  // ClassResources contains the enforced set of class resources available.
+  // +featureGate=ClassResources
+  // +optional
+  // +listType=atomic
+  repeated ClassResourceInfo classResources = 3;
 }
 
 // ResourceRequirements describes the compute resource requirements.

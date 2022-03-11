@@ -4688,6 +4688,13 @@ func (in *ResourceQuotaSpec) DeepCopyInto(out *ResourceQuotaSpec) {
 		*out = new(ScopeSelector)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ClassResources != nil {
+		in, out := &in.ClassResources, &out.ClassResources
+		*out = make([]ClassResourceInfo, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 
@@ -4716,6 +4723,13 @@ func (in *ResourceQuotaStatus) DeepCopyInto(out *ResourceQuotaStatus) {
 		*out = make(ResourceList, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val.DeepCopy()
+		}
+	}
+	if in.ClassResources != nil {
+		in, out := &in.ClassResources, &out.ClassResources
+		*out = make([]ClassResourceInfo, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	return

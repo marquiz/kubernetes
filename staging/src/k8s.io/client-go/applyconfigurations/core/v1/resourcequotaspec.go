@@ -25,9 +25,10 @@ import (
 // ResourceQuotaSpecApplyConfiguration represents an declarative configuration of the ResourceQuotaSpec type for use
 // with apply.
 type ResourceQuotaSpecApplyConfiguration struct {
-	Hard          *v1.ResourceList                 `json:"hard,omitempty"`
-	Scopes        []v1.ResourceQuotaScope          `json:"scopes,omitempty"`
-	ScopeSelector *ScopeSelectorApplyConfiguration `json:"scopeSelector,omitempty"`
+	Hard           *v1.ResourceList                      `json:"hard,omitempty"`
+	Scopes         []v1.ResourceQuotaScope               `json:"scopes,omitempty"`
+	ScopeSelector  *ScopeSelectorApplyConfiguration      `json:"scopeSelector,omitempty"`
+	ClassResources []ClassResourceInfoApplyConfiguration `json:"classResources,omitempty"`
 }
 
 // ResourceQuotaSpecApplyConfiguration constructs an declarative configuration of the ResourceQuotaSpec type for use with
@@ -59,5 +60,18 @@ func (b *ResourceQuotaSpecApplyConfiguration) WithScopes(values ...v1.ResourceQu
 // If called multiple times, the ScopeSelector field is set to the value of the last call.
 func (b *ResourceQuotaSpecApplyConfiguration) WithScopeSelector(value *ScopeSelectorApplyConfiguration) *ResourceQuotaSpecApplyConfiguration {
 	b.ScopeSelector = value
+	return b
+}
+
+// WithClassResources adds the given value to the ClassResources field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the ClassResources field.
+func (b *ResourceQuotaSpecApplyConfiguration) WithClassResources(values ...*ClassResourceInfoApplyConfiguration) *ResourceQuotaSpecApplyConfiguration {
+	for i := range values {
+		if values[i] == nil {
+			panic("nil value passed to WithClassResources")
+		}
+		b.ClassResources = append(b.ClassResources, *values[i])
+	}
 	return b
 }

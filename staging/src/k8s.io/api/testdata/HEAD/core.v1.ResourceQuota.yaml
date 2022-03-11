@@ -33,6 +33,10 @@ metadata:
   selfLink: selfLinkValue
   uid: uidValue
 spec:
+  classResources:
+  - classes:
+    - classesValue
+    name: nameValue
   hard:
     hardKey: "0"
   scopeSelector:
@@ -44,6 +48,10 @@ spec:
   scopes:
   - scopesValue
 status:
+  classResources:
+  - classes:
+    - classesValue
+    name: nameValue
   hard:
     hardKey: "0"
   used:
