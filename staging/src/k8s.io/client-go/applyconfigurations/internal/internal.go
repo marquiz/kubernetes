@@ -3698,6 +3698,29 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: podAntiAffinity
       type:
         namedType: io.k8s.api.core.v1.PodAntiAffinity
+- name: io.k8s.api.core.v1.AllowedQoSResource
+  map:
+    fields:
+    - name: classes
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.AllowedQoSResourceClass
+          elementRelationship: atomic
+    - name: name
+      type:
+        scalar: string
+      default: ""
+- name: io.k8s.api.core.v1.AllowedQoSResourceClass
+  map:
+    fields:
+    - name: capacity
+      type:
+        scalar: numeric
+    - name: name
+      type:
+        scalar: string
+      default: ""
 - name: io.k8s.api.core.v1.AttachedVolume
   map:
     fields:
@@ -6333,6 +6356,21 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
       default: ""
+- name: io.k8s.api.core.v1.QoSResourceQuota
+  map:
+    fields:
+    - name: container
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.AllowedQoSResource
+          elementRelationship: atomic
+    - name: pod
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.api.core.v1.AllowedQoSResource
+          elementRelationship: atomic
 - name: io.k8s.api.core.v1.QoSResourceStatus
   map:
     fields:
@@ -6571,6 +6609,10 @@ var schemaYAML = typed.YAMLObject(`types:
         map:
           elementType:
             namedType: io.k8s.apimachinery.pkg.api.resource.Quantity
+    - name: qosResources
+      type:
+        namedType: io.k8s.api.core.v1.QoSResourceQuota
+      default: {}
     - name: scopeSelector
       type:
         namedType: io.k8s.api.core.v1.ScopeSelector
@@ -6588,6 +6630,14 @@ var schemaYAML = typed.YAMLObject(`types:
         map:
           elementType:
             namedType: io.k8s.apimachinery.pkg.api.resource.Quantity
+    - name: qosResources
+      type:
+        namedType: io.k8s.api.core.v1.QoSResourceQuota
+      default: {}
+    - name: qosResourcesUsage
+      type:
+        namedType: io.k8s.api.core.v1.QoSResourceQuota
+      default: {}
     - name: used
       type:
         map:

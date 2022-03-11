@@ -533,6 +533,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		// Group=core, Version=v1
 	case corev1.SchemeGroupVersion.WithKind("Affinity"):
 		return &applyconfigurationscorev1.AffinityApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("AllowedQoSResource"):
+		return &applyconfigurationscorev1.AllowedQoSResourceApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("AllowedQoSResourceClass"):
+		return &applyconfigurationscorev1.AllowedQoSResourceClassApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("AttachedVolume"):
 		return &applyconfigurationscorev1.AttachedVolumeApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("AWSElasticBlockStoreVolumeSource"):
@@ -793,6 +797,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &applyconfigurationscorev1.QoSResourceClassInfoApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("QoSResourceInfo"):
 		return &applyconfigurationscorev1.QoSResourceInfoApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("QoSResourceQuota"):
+		return &applyconfigurationscorev1.QoSResourceQuotaApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("QoSResourceStatus"):
 		return &applyconfigurationscorev1.QoSResourceStatusApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("QuobyteVolumeSource"):

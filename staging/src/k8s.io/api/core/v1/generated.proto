@@ -77,6 +77,26 @@ message Affinity {
   optional PodAntiAffinity podAntiAffinity = 3;
 }
 
+// AllowedQoSResource specifies access to one QoS resources type.
+message AllowedQoSResource {
+  // Name of the resource.
+  optional string name = 1;
+
+  // Allowed classes.
+  repeated AllowedQoSResourceClass classes = 2;
+}
+
+// AllowedQoSResourceClass specifies one allowed class of a QoS resource and
+// possible limits for its usage.
+message AllowedQoSResourceClass {
+  // Name of the class.
+  optional string name = 1;
+
+  // Capacity is the hard limit for usage of the class.
+  // +optional
+  optional int64 capacity = 2;
+}
+
 // AttachedVolume describes a volume attached to a node
 message AttachedVolume {
   // Name of the attached volume
@@ -4180,6 +4200,21 @@ message QoSResourceInfo {
   repeated QoSResourceClassInfo classes = 3;
 }
 
+// QoSResourceQuota contains the allowed QoS resources.
+message QoSResourceQuota {
+  // Pod contains the allowed QoS resources for pods.
+  // +featureGate=QoSResources
+  // +optional
+  // +listType=atomic
+  repeated AllowedQoSResource pod = 1;
+
+  // Container contains the allowed QoS resources for containers.
+  // +featureGate=QoSResources
+  // +optional
+  // +listType=atomic
+  repeated AllowedQoSResource container = 2;
+}
+
 // QoSResourceStatus describes QoS resources available on the node.
 message QoSResourceStatus {
   // PodQoSResources contains the QoS resources that are available for pods
@@ -4527,6 +4562,11 @@ message ResourceQuotaSpec {
   // For a resource to match, both scopes AND scopeSelector (if specified in spec), must be matched.
   // +optional
   optional ScopeSelector scopeSelector = 3;
+
+  // QoSResources contains the desired set of allowed QoS resources.
+  // +featureGate=QoSResources
+  // +optional
+  optional QoSResourceQuota qosResources = 4;
 }
 
 // ResourceQuotaStatus defines the enforced hard limits and observed use.
@@ -4539,6 +4579,16 @@ message ResourceQuotaStatus {
   // Used is the current observed total usage of the resource in the namespace.
   // +optional
   map<string, k8s.io.apimachinery.pkg.api.resource.Quantity> used = 2;
+
+  // QoSResources contains the enforced set of available QoS resources.
+  // +featureGate=QoSResources
+  // +optional
+  optional QoSResourceQuota qosResources = 3;
+
+  // QoSResourcesUsage contains the observed usage of QoS resources in the namespace.
+  // +featureGate=QoSResources
+  // +optional
+  optional QoSResourceQuota qosResourcesUsage = 4;
 }
 
 // ResourceRequirements describes the compute resource requirements.
