@@ -6218,6 +6218,42 @@ type ResourceQuotaSpec struct {
 	// For a resource to match, both scopes AND scopeSelector (if specified in spec), must be matched.
 	// +optional
 	ScopeSelector *ScopeSelector `json:"scopeSelector,omitempty" protobuf:"bytes,3,opt,name=scopeSelector"`
+	// QoSResources contains the desired set of allowed QoS resources.
+	// +featureGate=QoSResources
+	// +optional
+	QoSResources QoSResourceQuota `json:"qosResources,omitempty" protobuf:"bytes,4,rep,name=qosResources"`
+}
+
+// QoSResourceQuota contains the allowed QoS resources.
+type QoSResourceQuota struct {
+	// Pod contains the allowed QoS resources for pods.
+	// +featureGate=QoSResources
+	// +optional
+	// +listType=atomic
+	Pod []AllowedQoSResource `json:"pod,omitempty" protobuf:"bytes,1,rep,name=pod"`
+	// Container contains the allowed QoS resources for containers.
+	// +featureGate=QoSResources
+	// +optional
+	// +listType=atomic
+	Container []AllowedQoSResource `json:"container,omitempty" protobuf:"bytes,2,rep,name=container"`
+}
+
+// AllowedQoSResource specifies access to one QoS resources type.
+type AllowedQoSResource struct {
+	// Name of the resource.
+	Name QoSResourceName `json:"name" protobuf:"bytes,1,name=name"`
+	// Allowed classes.
+	Classes []AllowedQoSResourceClass `json:"classes" protobuf:"bytes,2,rep,name=classes"`
+}
+
+// AllowedQoSResourceClass specifies one allowed class of a QoS resource and
+// possible limits for its usage.
+type AllowedQoSResourceClass struct {
+	// Name of the class.
+	Name string `json:"name" protobuf:"bytes,1,name=name"`
+	// Capacity is the hard limit for usage of the class.
+	// +optional
+	Capacity int64 `json:"capacity,omitempty" protobuf:"varint,2,opt,name=capacity"`
 }
 
 // A scope selector represents the AND of the selectors represented
@@ -6266,6 +6302,14 @@ type ResourceQuotaStatus struct {
 	// Used is the current observed total usage of the resource in the namespace.
 	// +optional
 	Used ResourceList `json:"used,omitempty" protobuf:"bytes,2,rep,name=used,casttype=ResourceList,castkey=ResourceName"`
+	// QoSResources contains the enforced set of available QoS resources.
+	// +featureGate=QoSResources
+	// +optional
+	QoSResources QoSResourceQuota `json:"qosResources,omitempty" protobuf:"bytes,3,name=qosResources"`
+	// QoSResourcesUsage contains the observed usage of QoS resources in the namespace.
+	// +featureGate=QoSResources
+	// +optional
+	QoSResourcesUsage QoSResourceQuota `json:"qosResourcesUsage,omitempty" protobuf:"bytes,4,name=qosResourcesUsage"`
 }
 
 // +genclient
