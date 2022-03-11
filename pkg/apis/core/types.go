@@ -5140,6 +5140,10 @@ type ResourceQuotaSpec struct {
 	// but expressed using ScopeSelectorOperator in combination with possible values.
 	// +optional
 	ScopeSelector *ScopeSelector
+	// ClassResources contains the allowed class resources.
+	// +featureGate=ClassResources
+	// +optional
+	ClassResources []ClassResourceInfo
 }
 
 // ScopeSelector represents the AND of the selectors represented
@@ -5186,6 +5190,10 @@ type ResourceQuotaStatus struct {
 	// Used is the current observed total usage of the resource in the namespace
 	// +optional
 	Used ResourceList
+	// ClassResources contains the enforced set of class resources available.
+	// +featureGate=ClassResources
+	// +optional
+	ClassResources []ClassResourceInfo
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

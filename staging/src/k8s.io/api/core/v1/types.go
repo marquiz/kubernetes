@@ -6045,6 +6045,11 @@ type ResourceQuotaSpec struct {
 	// For a resource to match, both scopes AND scopeSelector (if specified in spec), must be matched.
 	// +optional
 	ScopeSelector *ScopeSelector `json:"scopeSelector,omitempty" protobuf:"bytes,3,opt,name=scopeSelector"`
+	// ClassResources contains the allowed class resources.
+	// +featureGate=ClassResources
+	// +optional
+	// +listType=atomic
+	ClassResources []ClassResourceInfo `json:"classResources,omitempty" protobuf:"bytes,4,rep,name=classResources"`
 }
 
 // A scope selector represents the AND of the selectors represented
@@ -6093,6 +6098,11 @@ type ResourceQuotaStatus struct {
 	// Used is the current observed total usage of the resource in the namespace.
 	// +optional
 	Used ResourceList `json:"used,omitempty" protobuf:"bytes,2,rep,name=used,casttype=ResourceList,castkey=ResourceName"`
+	// ClassResources contains the enforced set of class resources available.
+	// +featureGate=ClassResources
+	// +optional
+	// +listType=atomic
+	ClassResources []ClassResourceInfo `json:"classResources,omitempty" protobuf:"bytes,3,rep,name=classResources"`
 }
 
 // +genclient
