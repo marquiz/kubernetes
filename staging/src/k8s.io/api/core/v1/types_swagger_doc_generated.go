@@ -50,6 +50,25 @@ func (Affinity) SwaggerDoc() map[string]string {
 	return map_Affinity
 }
 
+var map_AllowedQoSResource = map[string]string{
+	"":        "AllowedQoSResource specifies access to one QoS resources type.",
+	"name":    "Name of the resource.",
+	"classes": "Allowed classes.",
+}
+
+func (AllowedQoSResource) SwaggerDoc() map[string]string {
+	return map_AllowedQoSResource
+}
+
+var map_AllowedQoSResourceClass = map[string]string{
+	"":     "AllowedQoSResourceClass specifies one allowed class of a QoS resource and possible limits for its usage.",
+	"name": "Name of the class.",
+}
+
+func (AllowedQoSResourceClass) SwaggerDoc() map[string]string {
+	return map_AllowedQoSResourceClass
+}
+
 var map_AttachedVolume = map[string]string{
 	"":           "AttachedVolume describes a volume attached to a node",
 	"name":       "Name of the attached volume",
@@ -1880,6 +1899,16 @@ func (QoSResourceInfo) SwaggerDoc() map[string]string {
 	return map_QoSResourceInfo
 }
 
+var map_QoSResourceQuota = map[string]string{
+	"":          "QoSResourceQuota contains the allowed QoS resources.",
+	"pod":       "Pod contains the allowed QoS resources for pods.",
+	"container": "Container contains the allowed QoS resources for containers.",
+}
+
+func (QoSResourceQuota) SwaggerDoc() map[string]string {
+	return map_QoSResourceQuota
+}
+
 var map_QoSResourceStatus = map[string]string{
 	"":                      "QoSResourceStatus describes QoS resources available on the node.",
 	"podQoSResources":       "PodQoSResources contains the QoS resources that are available for pods to be assigned to.",
@@ -2053,6 +2082,7 @@ var map_ResourceQuotaSpec = map[string]string{
 	"hard":          "hard is the set of desired hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
 	"scopes":        "A collection of filters that must match each object tracked by a quota. If not specified, the quota matches all objects.",
 	"scopeSelector": "scopeSelector is also a collection of filters like scopes that must match each object tracked by a quota but expressed using ScopeSelectorOperator in combination with possible values. For a resource to match, both scopes AND scopeSelector (if specified in spec), must be matched.",
+	"qosResources":  "QoSResources contains the desired set of allowed QoS resources.",
 }
 
 func (ResourceQuotaSpec) SwaggerDoc() map[string]string {
@@ -2060,9 +2090,10 @@ func (ResourceQuotaSpec) SwaggerDoc() map[string]string {
 }
 
 var map_ResourceQuotaStatus = map[string]string{
-	"":     "ResourceQuotaStatus defines the enforced hard limits and observed use.",
-	"hard": "Hard is the set of enforced hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
-	"used": "Used is the current observed total usage of the resource in the namespace.",
+	"":             "ResourceQuotaStatus defines the enforced hard limits and observed use.",
+	"hard":         "Hard is the set of enforced hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
+	"used":         "Used is the current observed total usage of the resource in the namespace.",
+	"qosResources": "QoSResources contains the enforced set of available QoS resources.",
 }
 
 func (ResourceQuotaStatus) SwaggerDoc() map[string]string {

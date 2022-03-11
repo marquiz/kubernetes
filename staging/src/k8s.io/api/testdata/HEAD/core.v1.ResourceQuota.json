@@ -60,6 +60,28 @@
           ]
         }
       ]
+    },
+    "qosResources": {
+      "pod": [
+        {
+          "name": "nameValue",
+          "classes": [
+            {
+              "name": "nameValue"
+            }
+          ]
+        }
+      ],
+      "container": [
+        {
+          "name": "nameValue",
+          "classes": [
+            {
+              "name": "nameValue"
+            }
+          ]
+        }
+      ]
     }
   },
   "status": {
@@ -68,6 +90,28 @@
     },
     "used": {
       "usedKey": "0"
+    },
+    "qosResources": {
+      "pod": [
+        {
+          "name": "nameValue",
+          "classes": [
+            {
+              "name": "nameValue"
+            }
+          ]
+        }
+      ],
+      "container": [
+        {
+          "name": "nameValue",
+          "classes": [
+            {
+              "name": "nameValue"
+            }
+          ]
+        }
+      ]
     }
   }
 }
