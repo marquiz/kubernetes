@@ -619,6 +619,10 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		// Group=core, Version=v1
 	case corev1.SchemeGroupVersion.WithKind("Affinity"):
 		return &applyconfigurationscorev1.AffinityApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("AllowedQOSResource"):
+		return &applyconfigurationscorev1.AllowedQOSResourceApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("AllowedQOSResourceClass"):
+		return &applyconfigurationscorev1.AllowedQOSResourceClassApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("AppArmorProfile"):
 		return &applyconfigurationscorev1.AppArmorProfileApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("AttachedVolume"):
@@ -897,6 +901,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &applyconfigurationscorev1.QOSResourceClassInfoApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("QOSResourceInfo"):
 		return &applyconfigurationscorev1.QOSResourceInfoApplyConfiguration{}
+	case corev1.SchemeGroupVersion.WithKind("QOSResourceQuota"):
+		return &applyconfigurationscorev1.QOSResourceQuotaApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("QOSResourceRequest"):
 		return &applyconfigurationscorev1.QOSResourceRequestApplyConfiguration{}
 	case corev1.SchemeGroupVersion.WithKind("QOSResourceStatus"):

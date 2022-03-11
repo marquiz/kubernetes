@@ -25,8 +25,10 @@ import (
 // ResourceQuotaStatusApplyConfiguration represents an declarative configuration of the ResourceQuotaStatus type for use
 // with apply.
 type ResourceQuotaStatusApplyConfiguration struct {
-	Hard *v1.ResourceList `json:"hard,omitempty"`
-	Used *v1.ResourceList `json:"used,omitempty"`
+	Hard              *v1.ResourceList                    `json:"hard,omitempty"`
+	Used              *v1.ResourceList                    `json:"used,omitempty"`
+	QOSResources      *QOSResourceQuotaApplyConfiguration `json:"qosResources,omitempty"`
+	QOSResourcesUsage *QOSResourceQuotaApplyConfiguration `json:"qosResourcesUsage,omitempty"`
 }
 
 // ResourceQuotaStatusApplyConfiguration constructs an declarative configuration of the ResourceQuotaStatus type for use with
@@ -48,5 +50,21 @@ func (b *ResourceQuotaStatusApplyConfiguration) WithHard(value v1.ResourceList) 
 // If called multiple times, the Used field is set to the value of the last call.
 func (b *ResourceQuotaStatusApplyConfiguration) WithUsed(value v1.ResourceList) *ResourceQuotaStatusApplyConfiguration {
 	b.Used = &value
+	return b
+}
+
+// WithQOSResources sets the QOSResources field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the QOSResources field is set to the value of the last call.
+func (b *ResourceQuotaStatusApplyConfiguration) WithQOSResources(value *QOSResourceQuotaApplyConfiguration) *ResourceQuotaStatusApplyConfiguration {
+	b.QOSResources = value
+	return b
+}
+
+// WithQOSResourcesUsage sets the QOSResourcesUsage field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the QOSResourcesUsage field is set to the value of the last call.
+func (b *ResourceQuotaStatusApplyConfiguration) WithQOSResourcesUsage(value *QOSResourceQuotaApplyConfiguration) *ResourceQuotaStatusApplyConfiguration {
+	b.QOSResourcesUsage = value
 	return b
 }

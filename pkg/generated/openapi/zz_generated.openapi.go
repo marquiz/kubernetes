@@ -378,6 +378,8 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/api/coordination/v1beta1.LeaseSpec":                                                             schema_k8sio_api_coordination_v1beta1_LeaseSpec(ref),
 		"k8s.io/api/core/v1.AWSElasticBlockStoreVolumeSource":                                                   schema_k8sio_api_core_v1_AWSElasticBlockStoreVolumeSource(ref),
 		"k8s.io/api/core/v1.Affinity":                                                                           schema_k8sio_api_core_v1_Affinity(ref),
+		"k8s.io/api/core/v1.AllowedQOSResource":                                                                 schema_k8sio_api_core_v1_AllowedQOSResource(ref),
+		"k8s.io/api/core/v1.AllowedQOSResourceClass":                                                            schema_k8sio_api_core_v1_AllowedQOSResourceClass(ref),
 		"k8s.io/api/core/v1.AppArmorProfile":                                                                    schema_k8sio_api_core_v1_AppArmorProfile(ref),
 		"k8s.io/api/core/v1.AttachedVolume":                                                                     schema_k8sio_api_core_v1_AttachedVolume(ref),
 		"k8s.io/api/core/v1.AvoidPods":                                                                          schema_k8sio_api_core_v1_AvoidPods(ref),
@@ -539,6 +541,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"k8s.io/api/core/v1.ProjectedVolumeSource":                                                              schema_k8sio_api_core_v1_ProjectedVolumeSource(ref),
 		"k8s.io/api/core/v1.QOSResourceClassInfo":                                                               schema_k8sio_api_core_v1_QOSResourceClassInfo(ref),
 		"k8s.io/api/core/v1.QOSResourceInfo":                                                                    schema_k8sio_api_core_v1_QOSResourceInfo(ref),
+		"k8s.io/api/core/v1.QOSResourceQuota":                                                                   schema_k8sio_api_core_v1_QOSResourceQuota(ref),
 		"k8s.io/api/core/v1.QOSResourceRequest":                                                                 schema_k8sio_api_core_v1_QOSResourceRequest(ref),
 		"k8s.io/api/core/v1.QOSResourceStatus":                                                                  schema_k8sio_api_core_v1_QOSResourceStatus(ref),
 		"k8s.io/api/core/v1.QuobyteVolumeSource":                                                                schema_k8sio_api_core_v1_QuobyteVolumeSource(ref),
@@ -18980,6 +18983,78 @@ func schema_k8sio_api_core_v1_Affinity(ref common.ReferenceCallback) common.Open
 	}
 }
 
+func schema_k8sio_api_core_v1_AllowedQOSResource(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "AllowedQOSResource specifies access to one QoS resources type.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the resource.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"classes": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Allowed classes.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.AllowedQOSResourceClass"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name", "classes"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.AllowedQOSResourceClass"},
+	}
+}
+
+func schema_k8sio_api_core_v1_AllowedQOSResourceClass(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "AllowedQOSResourceClass specifies one allowed class of a QoS resource and possible limits for its usage.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name of the class.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"capacity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Capacity is the hard limit for usage of the class.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+	}
+}
+
 func schema_k8sio_api_core_v1_AppArmorProfile(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -28542,6 +28617,59 @@ func schema_k8sio_api_core_v1_QOSResourceInfo(ref common.ReferenceCallback) comm
 	}
 }
 
+func schema_k8sio_api_core_v1_QOSResourceQuota(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "QOSResourceQuota contains the allowed QoS resources.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"pod": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Pod contains the allowed QoS resources for pods.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.AllowedQOSResource"),
+									},
+								},
+							},
+						},
+					},
+					"container": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Container contains the allowed QoS resources for containers.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.AllowedQOSResource"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.AllowedQOSResource"},
+	}
+}
+
 func schema_k8sio_api_core_v1_QOSResourceRequest(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -29403,11 +29531,18 @@ func schema_k8sio_api_core_v1_ResourceQuotaSpec(ref common.ReferenceCallback) co
 							Ref:         ref("k8s.io/api/core/v1.ScopeSelector"),
 						},
 					},
+					"qosResources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "QOSResources contains the desired set of allowed QoS resources.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.QOSResourceQuota"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/api/core/v1.ScopeSelector", "k8s.io/apimachinery/pkg/api/resource.Quantity"},
+			"k8s.io/api/core/v1.QOSResourceQuota", "k8s.io/api/core/v1.ScopeSelector", "k8s.io/apimachinery/pkg/api/resource.Quantity"},
 	}
 }
 
@@ -29446,11 +29581,25 @@ func schema_k8sio_api_core_v1_ResourceQuotaStatus(ref common.ReferenceCallback) 
 							},
 						},
 					},
+					"qosResources": {
+						SchemaProps: spec.SchemaProps{
+							Description: "QOSResources contains the enforced set of available QoS resources.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.QOSResourceQuota"),
+						},
+					},
+					"qosResourcesUsage": {
+						SchemaProps: spec.SchemaProps{
+							Description: "QOSResourcesUsage contains the observed usage of QoS resources in the namespace.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.QOSResourceQuota"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/api/resource.Quantity"},
+			"k8s.io/api/core/v1.QOSResourceQuota", "k8s.io/apimachinery/pkg/api/resource.Quantity"},
 	}
 }
 

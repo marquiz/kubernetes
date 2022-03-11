@@ -60,6 +60,30 @@
           ]
         }
       ]
+    },
+    "qosResources": {
+      "pod": [
+        {
+          "name": "nameValue",
+          "classes": [
+            {
+              "name": "nameValue",
+              "capacity": 2
+            }
+          ]
+        }
+      ],
+      "container": [
+        {
+          "name": "nameValue",
+          "classes": [
+            {
+              "name": "nameValue",
+              "capacity": 2
+            }
+          ]
+        }
+      ]
     }
   },
   "status": {
@@ -68,6 +92,54 @@
     },
     "used": {
       "usedKey": "0"
+    },
+    "qosResources": {
+      "pod": [
+        {
+          "name": "nameValue",
+          "classes": [
+            {
+              "name": "nameValue",
+              "capacity": 2
+            }
+          ]
+        }
+      ],
+      "container": [
+        {
+          "name": "nameValue",
+          "classes": [
+            {
+              "name": "nameValue",
+              "capacity": 2
+            }
+          ]
+        }
+      ]
+    },
+    "qosResourcesUsage": {
+      "pod": [
+        {
+          "name": "nameValue",
+          "classes": [
+            {
+              "name": "nameValue",
+              "capacity": 2
+            }
+          ]
+        }
+      ],
+      "container": [
+        {
+          "name": "nameValue",
+          "classes": [
+            {
+              "name": "nameValue",
+              "capacity": 2
+            }
+          ]
+        }
+      ]
     }
   }
 }

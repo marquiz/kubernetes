@@ -35,6 +35,17 @@ metadata:
 spec:
   hard:
     hardKey: "0"
+  qosResources:
+    container:
+    - classes:
+      - capacity: 2
+        name: nameValue
+      name: nameValue
+    pod:
+    - classes:
+      - capacity: 2
+        name: nameValue
+      name: nameValue
   scopeSelector:
     matchExpressions:
     - operator: operatorValue
@@ -46,5 +57,27 @@ spec:
 status:
   hard:
     hardKey: "0"
+  qosResources:
+    container:
+    - classes:
+      - capacity: 2
+        name: nameValue
+      name: nameValue
+    pod:
+    - classes:
+      - capacity: 2
+        name: nameValue
+      name: nameValue
+  qosResourcesUsage:
+    container:
+    - classes:
+      - capacity: 2
+        name: nameValue
+      name: nameValue
+    pod:
+    - classes:
+      - capacity: 2
+        name: nameValue
+      name: nameValue
   used:
     usedKey: "0"

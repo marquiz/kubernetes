@@ -263,6 +263,53 @@
         },
         "type": "object"
       },
+      "io.k8s.api.core.v1.AllowedQOSResource": {
+        "description": "AllowedQOSResource specifies access to one QoS resources type.",
+        "properties": {
+          "classes": {
+            "description": "Allowed classes.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.AllowedQOSResourceClass"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-type": "atomic"
+          },
+          "name": {
+            "default": "",
+            "description": "Name of the resource.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "classes"
+        ],
+        "type": "object"
+      },
+      "io.k8s.api.core.v1.AllowedQOSResourceClass": {
+        "description": "AllowedQOSResourceClass specifies one allowed class of a QoS resource and possible limits for its usage.",
+        "properties": {
+          "capacity": {
+            "description": "Capacity is the hard limit for usage of the class.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "default": "",
+            "description": "Name of the class.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
       "io.k8s.api.core.v1.AppArmorProfile": {
         "description": "AppArmorProfile defines a pod or container's AppArmor settings.",
         "properties": {
@@ -6218,6 +6265,38 @@
         ],
         "type": "object"
       },
+      "io.k8s.api.core.v1.QOSResourceQuota": {
+        "description": "QOSResourceQuota contains the allowed QoS resources.",
+        "properties": {
+          "container": {
+            "description": "Container contains the allowed QoS resources for containers.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.AllowedQOSResource"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-type": "atomic"
+          },
+          "pod": {
+            "description": "Pod contains the allowed QoS resources for pods.",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/io.k8s.api.core.v1.AllowedQOSResource"
+                }
+              ],
+              "default": {}
+            },
+            "type": "array",
+            "x-kubernetes-list-type": "atomic"
+          }
+        },
+        "type": "object"
+      },
       "io.k8s.api.core.v1.QOSResourceRequest": {
         "description": "QOSResourceRequest specifies a request for one QoS resource type.",
         "properties": {
@@ -6769,6 +6848,15 @@
             "description": "hard is the set of desired hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
             "type": "object"
           },
+          "qosResources": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/io.k8s.api.core.v1.QOSResourceQuota"
+              }
+            ],
+            "default": {},
+            "description": "QOSResources contains the desired set of allowed QoS resources."
+          },
           "scopeSelector": {
             "allOf": [
               {
@@ -6798,6 +6886,24 @@
             },
             "description": "Hard is the set of enforced hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
             "type": "object"
+          },
+          "qosResources": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/io.k8s.api.core.v1.QOSResourceQuota"
+              }
+            ],
+            "default": {},
+            "description": "QOSResources contains the enforced set of available QoS resources."
+          },
+          "qosResourcesUsage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/io.k8s.api.core.v1.QOSResourceQuota"
+              }
+            ],
+            "default": {},
+            "description": "QOSResourcesUsage contains the observed usage of QoS resources in the namespace."
           },
           "used": {
             "additionalProperties": {

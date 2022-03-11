@@ -25,9 +25,10 @@ import (
 // ResourceQuotaSpecApplyConfiguration represents an declarative configuration of the ResourceQuotaSpec type for use
 // with apply.
 type ResourceQuotaSpecApplyConfiguration struct {
-	Hard          *v1.ResourceList                 `json:"hard,omitempty"`
-	Scopes        []v1.ResourceQuotaScope          `json:"scopes,omitempty"`
-	ScopeSelector *ScopeSelectorApplyConfiguration `json:"scopeSelector,omitempty"`
+	Hard          *v1.ResourceList                    `json:"hard,omitempty"`
+	Scopes        []v1.ResourceQuotaScope             `json:"scopes,omitempty"`
+	ScopeSelector *ScopeSelectorApplyConfiguration    `json:"scopeSelector,omitempty"`
+	QOSResources  *QOSResourceQuotaApplyConfiguration `json:"qosResources,omitempty"`
 }
 
 // ResourceQuotaSpecApplyConfiguration constructs an declarative configuration of the ResourceQuotaSpec type for use with
@@ -59,5 +60,13 @@ func (b *ResourceQuotaSpecApplyConfiguration) WithScopes(values ...v1.ResourceQu
 // If called multiple times, the ScopeSelector field is set to the value of the last call.
 func (b *ResourceQuotaSpecApplyConfiguration) WithScopeSelector(value *ScopeSelectorApplyConfiguration) *ResourceQuotaSpecApplyConfiguration {
 	b.ScopeSelector = value
+	return b
+}
+
+// WithQOSResources sets the QOSResources field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the QOSResources field is set to the value of the last call.
+func (b *ResourceQuotaSpecApplyConfiguration) WithQOSResources(value *QOSResourceQuotaApplyConfiguration) *ResourceQuotaSpecApplyConfiguration {
+	b.QOSResources = value
 	return b
 }
