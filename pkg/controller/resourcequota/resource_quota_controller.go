@@ -135,7 +135,8 @@ func NewController(ctx context.Context, options *ControllerOptions) (*Controller
 				// responsible for enqueue of all resource quotas when doing a full resync (enqueueAll)
 				oldResourceQuota := old.(*v1.ResourceQuota)
 				curResourceQuota := cur.(*v1.ResourceQuota)
-				if quota.Equals(oldResourceQuota.Spec.Hard, curResourceQuota.Spec.Hard) {
+				if quota.Equals(oldResourceQuota.Spec.Hard, curResourceQuota.Spec.Hard) &&
+					quota.QOSResourceEquals(oldResourceQuota.Spec.QOSResources, curResourceQuota.Spec.QOSResources) {
 					return
 				}
 				rq.addQuota(logger, curResourceQuota)
@@ -347,6 +348,8 @@ func (rq *Controller) syncResourceQuotaFromKey(ctx context.Context, key string) 
 func (rq *Controller) syncResourceQuota(ctx context.Context, resourceQuota *v1.ResourceQuota) (err error) {
 	// quota is dirty if any part of spec hard limits differs from the status hard limits
 	statusLimitsDirty := !apiequality.Semantic.DeepEqual(resourceQuota.Spec.Hard, resourceQuota.Status.Hard)
+	statusLimitsDirty = statusLimitsDirty || !apiequality.Semantic.DeepEqual(resourceQuota.Spec.QOSResources.Pod, resourceQuota.Status.QOSResources.Pod)
+	statusLimitsDirty = statusLimitsDirty || !apiequality.Semantic.DeepEqual(resourceQuota.Spec.QOSResources.Container, resourceQuota.Status.QOSResources.Container)
 
 	// dirty tracks if the usage status differs from the previous sync,
 	// if so, we send a new usage with latest status
@@ -374,12 +377,16 @@ func (rq *Controller) syncResourceQuota(ctx context.Context, resourceQuota *v1.R
 	hardResources := quota.ResourceNames(hardLimits)
 	used = quota.Mask(used, hardResources)
 
+	// Copy QoS resources as is, we don't track the actual usage stats
+	qosResources := resourceQuota.Spec.QOSResources.DeepCopy()
+
 	// Create a usage object that is based on the quota resource version that will handle updates
 	// by default, we preserve the past usage observation, and set hard to the current spec
 	usage := resourceQuota.DeepCopy()
 	usage.Status = v1.ResourceQuotaStatus{
-		Hard: hardLimits,
-		Used: used,
+		Hard:         hardLimits,
+		Used:         used,
+		QOSResources: *qosResources,
 	}
 
 	dirty = dirty || !quota.Equals(usage.Status.Used, resourceQuota.Status.Used)

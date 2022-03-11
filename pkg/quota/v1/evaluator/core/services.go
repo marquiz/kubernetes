@@ -74,7 +74,7 @@ func (p *serviceEvaluator) Handles(a admission.Attributes) bool {
 
 // Matches returns true if the evaluator matches the specified quota with the provided input item
 func (p *serviceEvaluator) Matches(resourceQuota *corev1.ResourceQuota, item runtime.Object) (bool, error) {
-	return generic.Matches(resourceQuota, item, p.MatchingResources, generic.MatchesNoScopeFunc)
+	return generic.Matches(resourceQuota, item, p.MatchingResources, false, generic.MatchesNoScopeFunc)
 }
 
 // MatchingResources takes the input specified list of resources and returns the set of resources it matches.
@@ -157,6 +157,11 @@ func portsWithNodePorts(svc *corev1.Service) *resource.Quantity {
 // UsageStats calculates aggregate usage for the object.
 func (p *serviceEvaluator) UsageStats(options quota.UsageStatsOptions) (quota.UsageStats, error) {
 	return generic.CalculateUsageStats(options, p.listFuncByNamespace, generic.MatchesNoScopeFunc, p.Usage)
+}
+
+// EvaluateQOSResources evaluates the requested QoS resources against quota
+func (p *serviceEvaluator) EvaluateQOSResources(corev1.QOSResourceQuota, runtime.Object) error {
+	return nil
 }
 
 var _ quota.Evaluator = &serviceEvaluator{}

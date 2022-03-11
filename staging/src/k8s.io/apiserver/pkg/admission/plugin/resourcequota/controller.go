@@ -252,7 +252,8 @@ func (e *quotaEvaluator) checkQuotas(quotas []corev1.ResourceQuota, admissionAtt
 		// that means that no quota docs applied, so it can get a pass
 		atLeastOneChangeForThisWaiter := false
 		for j := range newQuotas {
-			if !quota.Equals(quotas[j].Status.Used, newQuotas[j].Status.Used) {
+			if !quota.Equals(quotas[j].Status.Used, newQuotas[j].Status.Used) ||
+				!quota.QOSResourceEquals(quotas[j].Status.QOSResourcesUsage, newQuotas[j].Status.QOSResourcesUsage) {
 				atLeastOneChanged = true
 				atLeastOneChangeForThisWaiter = true
 				break
@@ -281,7 +282,8 @@ func (e *quotaEvaluator) checkQuotas(quotas []corev1.ResourceQuota, admissionAtt
 		newQuota := quotas[i]
 
 		// if this quota didn't have its status changed, skip it
-		if quota.Equals(originalQuotas[i].Status.Used, newQuota.Status.Used) {
+		if quota.Equals(originalQuotas[i].Status.Used, newQuota.Status.Used) &&
+			quota.QOSResourceEquals(originalQuotas[i].Status.QOSResourcesUsage, newQuota.Status.QOSResourcesUsage) {
 			continue
 		}
 
@@ -577,6 +579,12 @@ func CheckRequest(quotas []corev1.ResourceQuota, a admission.Attributes, evaluat
 
 		// update to the new usage number
 		outQuotas[index].Status.Used = newUsage
+
+		// Check QoS resources
+		if err := evaluator.EvaluateQOSResources(resourceQuota.Status.QOSResources, inputObject); err != nil {
+			return nil, admission.NewForbidden(a,
+				fmt.Errorf("disallowed QoS resources in quota: %s: %w", resourceQuota.Name, err))
+		}
 	}
 
 	return outQuotas, nil
