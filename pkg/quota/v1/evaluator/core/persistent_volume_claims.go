@@ -100,9 +100,11 @@ func (p *pvcEvaluator) Handles(a admission.Attributes) bool {
 	return false
 }
 
+func matchingClassResourcesStub([]corev1.ClassResourceInfo) []corev1.ClassResourceName { return nil }
+
 // Matches returns true if the evaluator matches the specified quota with the provided input item
 func (p *pvcEvaluator) Matches(resourceQuota *corev1.ResourceQuota, item runtime.Object) (bool, error) {
-	return generic.Matches(resourceQuota, item, p.MatchingResources, generic.MatchesNoScopeFunc)
+	return generic.Matches(resourceQuota, item, p.MatchingResources, matchingClassResourcesStub, generic.MatchesNoScopeFunc)
 }
 
 // MatchingScopes takes the input specified list of scopes and input object. Returns the set of scopes resource matches.
@@ -206,6 +208,11 @@ func (p *pvcEvaluator) getStorageUsage(pvc *corev1.PersistentVolumeClaim) *resou
 // UsageStats calculates aggregate usage for the object.
 func (p *pvcEvaluator) UsageStats(options quota.UsageStatsOptions) (quota.UsageStats, error) {
 	return generic.CalculateUsageStats(options, p.listFuncByNamespace, generic.MatchesNoScopeFunc, p.Usage)
+}
+
+// EvaluateClassResources evaluates the requested class resources against quota
+func (p *pvcEvaluator) EvaluateClassResources([]corev1.ClassResourceInfo, runtime.Object) error {
+	return nil
 }
 
 // ensure we implement required interface

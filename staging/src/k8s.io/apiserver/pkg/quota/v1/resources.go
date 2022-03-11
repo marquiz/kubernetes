@@ -45,6 +45,60 @@ func Equals(a corev1.ResourceList, b corev1.ResourceList) bool {
 	return true
 }
 
+// ClassResourceEquals returns true if the two class resource lists are equivalent
+func ClassResourceEquals(a, b []corev1.ClassResourceInfo) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	// Do the simplest thing, don't try to be smart with different ordering for example
+	for i, infoA := range a {
+		infoB := b[i]
+		if infoA.Name != infoB.Name {
+			return false
+		}
+
+		if len(infoA.Classes) != len(infoB.Classes) {
+			return false
+		}
+
+		for i, classA := range infoA.Classes {
+			if classA != infoB.Classes[i] {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+// ClassResourcesDenied checks if the requested class resources are allowed,
+// returning details about denied class resources.
+func ClassResourcesDenied(requests map[corev1.ClassResourceName]string, limits []corev1.ClassResourceInfo) map[corev1.ClassResourceName]string {
+	denied := map[corev1.ClassResourceName]string{}
+
+	for reqRes, reqClass := range requests {
+		for _, limitedRes := range limits {
+			if reqRes == limitedRes.Name {
+				if !stringsContains(limitedRes.Classes, reqClass) {
+					denied[reqRes] = reqClass
+				}
+			}
+		}
+	}
+
+	return denied
+}
+
+func stringsContains(list []string, elem string) bool {
+	for _, v := range list {
+		if v == elem {
+			return true
+		}
+	}
+	return false
+}
+
 // LessThanOrEqual returns true if a < b for each key in b
 // If false, it returns the keys in a that exceeded b
 func LessThanOrEqual(a corev1.ResourceList, b corev1.ResourceList) (bool, []corev1.ResourceName) {
@@ -162,6 +216,15 @@ func ResourceNames(resources corev1.ResourceList) []corev1.ResourceName {
 	result := []corev1.ResourceName{}
 	for resourceName := range resources {
 		result = append(result, resourceName)
+	}
+	return result
+}
+
+// ClassResourceNames returns a list of all class resource names in the array of ClassResourceInfo.
+func ClassResourceNames(resources []corev1.ClassResourceInfo) []corev1.ClassResourceName {
+	result := []corev1.ClassResourceName{}
+	for _, resource := range resources {
+		result = append(result, resource.Name)
 	}
 	return result
 }

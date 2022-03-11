@@ -578,6 +578,12 @@ func CheckRequest(quotas []corev1.ResourceQuota, a admission.Attributes, evaluat
 
 		// update to the new usage number
 		outQuotas[index].Status.Used = newUsage
+
+		// Check class resources
+		if err := evaluator.EvaluateClassResources(resourceQuota.Status.ClassResources, inputObject); err != nil {
+			return nil, admission.NewForbidden(a,
+				fmt.Errorf("disallowed class resources in quota: %s: %w", resourceQuota.Name, err))
+		}
 	}
 
 	return outQuotas, nil

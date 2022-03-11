@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -160,7 +161,7 @@ func (p *podEvaluator) Handles(a admission.Attributes) bool {
 
 // Matches returns true if the evaluator matches the specified quota with the provided input item
 func (p *podEvaluator) Matches(resourceQuota *corev1.ResourceQuota, item runtime.Object) (bool, error) {
-	return generic.Matches(resourceQuota, item, p.MatchingResources, podMatchesScopeFunc)
+	return generic.Matches(resourceQuota, item, p.MatchingResources, matchingPodClassResources, podMatchesScopeFunc)
 }
 
 // MatchingResources takes the input specified list of resources and returns the set of resources it matches.
@@ -178,6 +179,22 @@ func (p *podEvaluator) MatchingResources(input []corev1.ResourceName) []corev1.R
 	}
 
 	return result
+}
+
+// matchingClassResources takes the input specified list of class resources and returns the set of resources it matches.
+func matchingPodClassResources(input []corev1.ClassResourceInfo) []corev1.ClassResourceName {
+	ret := make([]corev1.ClassResourceName, 0, len(input))
+	for _, res := range input {
+		name := res.Name
+		for _, n := range ret {
+			if name == n {
+				continue
+			}
+		}
+		ret = append(ret, name)
+	}
+	sort.Slice(ret, func(i, j int) bool { return ret[i] < ret[j] })
+	return ret
 }
 
 // MatchingScopes takes the input specified list of scopes and pod object. Returns the set of scope selectors pod matches.
@@ -224,6 +241,81 @@ func (p *podEvaluator) Usage(item runtime.Object) (corev1.ResourceList, error) {
 // UsageStats calculates aggregate usage for the object.
 func (p *podEvaluator) UsageStats(options quota.UsageStatsOptions) (quota.UsageStats, error) {
 	return generic.CalculateUsageStats(options, p.listFuncByNamespace, podMatchesScopeFunc, p.Usage)
+}
+
+// EvaluateClassResources evaluates the requested class resources against quota
+func (p *podEvaluator) EvaluateClassResources(input []corev1.ClassResourceInfo, item runtime.Object) error {
+	pod, err := toExternalPodOrError(item)
+	if err != nil {
+		return err
+	}
+
+	messages := []string{}
+
+	toStr := func(crs map[corev1.ClassResourceName]string) string {
+		r := make([]string, 0, len(crs))
+		for k, v := range crs {
+			r = append(r, string(k)+"="+v)
+		}
+		return strings.Join(r, ",")
+	}
+
+	// Use maps to eliminate duplicates
+	if denied := quota.ClassResourcesDenied(pod.Spec.Resources.Classes, input); len(denied) > 0 {
+		messages = append(messages,
+			fmt.Sprintf("%s for pod-level resources", toStr(denied)))
+	}
+
+	for i := range pod.Spec.InitContainers {
+		if denied := quota.ClassResourcesDenied(pod.Spec.InitContainers[i].Resources.Classes, input); len(denied) > 0 {
+			messages = append(messages,
+				fmt.Sprintf("%s for init container %s",
+					toStr(denied), pod.Spec.InitContainers[i].Name))
+		}
+	}
+	for i := range pod.Spec.Containers {
+		if denied := quota.ClassResourcesDenied(pod.Spec.Containers[i].Resources.Classes, input); len(denied) > 0 {
+			messages = append(messages,
+				fmt.Sprintf("%s for container %s",
+					toStr(denied), pod.Spec.Containers[i].Name))
+		}
+	}
+
+	if len(messages) > 0 {
+		return fmt.Errorf(strings.Join(messages, "; "))
+	}
+
+	return nil
+}
+
+// Helper type for tracking the class resource usage
+type classResourceUsage map[corev1.ClassResourceName]map[string]struct{}
+
+func (u *classResourceUsage) append(request map[corev1.ClassResourceName]string) {
+	for k, v := range request {
+		if _, ok := (*u)[k]; !ok {
+			(*u)[k] = map[string]struct{}{}
+		}
+		(*u)[k][v] = struct{}{}
+	}
+}
+
+func (u *classResourceUsage) toInfo() []corev1.ClassResourceInfo {
+	ret := make([]corev1.ClassResourceInfo, 0, len(*u))
+
+	for res, classes := range *u {
+		c := make([]string, 0, len(classes))
+		for v := range classes {
+			c = append(c, v)
+		}
+		sort.Strings(c)
+
+		ret = append(ret, corev1.ClassResourceInfo{Name: res, Classes: c})
+	}
+
+	sort.Slice(ret, func(i, j int) bool { return ret[i].Name < ret[j].Name })
+
+	return ret
 }
 
 // verifies we implement the required interface.

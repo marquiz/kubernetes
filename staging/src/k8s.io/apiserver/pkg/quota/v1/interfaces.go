@@ -62,6 +62,8 @@ type Evaluator interface {
 	Usage(item runtime.Object) (corev1.ResourceList, error)
 	// UsageStats calculates latest observed usage stats for all objects
 	UsageStats(options UsageStatsOptions) (UsageStats, error)
+	// EvaluateClassResources evaluates the requested class resources against quota
+	EvaluateClassResources(input []corev1.ClassResourceInfo, item runtime.Object) error
 }
 
 // Configuration defines how the quota system is configured.

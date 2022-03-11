@@ -142,6 +142,9 @@ type UsageFunc func(object runtime.Object) (corev1.ResourceList, error)
 // MatchingResourceNamesFunc is a function that returns the list of resources matched
 type MatchingResourceNamesFunc func(input []corev1.ResourceName) []corev1.ResourceName
 
+// MatchingClassResourceNamesFunc is a function that returns the list of class resources matched
+type MatchingClassResourceNamesFunc func(input []corev1.ClassResourceInfo) []corev1.ClassResourceName
+
 // MatchesNoScopeFunc returns false on all match checks
 func MatchesNoScopeFunc(scope corev1.ScopedResourceSelectorRequirement, object runtime.Object) (bool, error) {
 	return false, nil
@@ -150,12 +153,14 @@ func MatchesNoScopeFunc(scope corev1.ScopedResourceSelectorRequirement, object r
 // Matches returns true if the quota matches the specified item.
 func Matches(
 	resourceQuota *corev1.ResourceQuota, item runtime.Object,
-	matchFunc MatchingResourceNamesFunc, scopeFunc MatchesScopeFunc) (bool, error) {
+	matchFunc MatchingResourceNamesFunc, classMatchFunc MatchingClassResourceNamesFunc,
+	scopeFunc MatchesScopeFunc) (bool, error) {
 	if resourceQuota == nil {
 		return false, fmt.Errorf("expected non-nil quota")
 	}
 	// verify the quota matches on at least one resource
 	matchResource := len(matchFunc(quota.ResourceNames(resourceQuota.Status.Hard))) > 0
+	matchClassResource := len(classMatchFunc(resourceQuota.Status.ClassResources)) > 0
 	// by default, no scopes matches all
 	matchScope := true
 	for _, scope := range getScopeSelectorsFromQuota(resourceQuota) {
@@ -165,7 +170,7 @@ func Matches(
 		}
 		matchScope = matchScope && innerMatch
 	}
-	return matchResource && matchScope, nil
+	return (matchResource || matchClassResource) && matchScope, nil
 }
 
 func getScopeSelectorsFromQuota(quota *corev1.ResourceQuota) []corev1.ScopedResourceSelectorRequirement {
@@ -254,9 +259,11 @@ func (o *objectCountEvaluator) Handles(a admission.Attributes) bool {
 	return operation == admission.Create
 }
 
+func matchingClassResources([]corev1.ClassResourceInfo) []corev1.ClassResourceName { return nil }
+
 // Matches returns true if the evaluator matches the specified quota with the provided input item
 func (o *objectCountEvaluator) Matches(resourceQuota *corev1.ResourceQuota, item runtime.Object) (bool, error) {
-	return Matches(resourceQuota, item, o.MatchingResources, MatchesNoScopeFunc)
+	return Matches(resourceQuota, item, o.MatchingResources, matchingClassResources, MatchesNoScopeFunc)
 }
 
 // MatchingResources takes the input specified list of resources and returns the set of resources it matches.
@@ -293,6 +300,11 @@ func (o *objectCountEvaluator) GroupResource() schema.GroupResource {
 // UsageStats calculates aggregate usage for the object.
 func (o *objectCountEvaluator) UsageStats(options quota.UsageStatsOptions) (quota.UsageStats, error) {
 	return CalculateUsageStats(options, o.listFuncByNamespace, MatchesNoScopeFunc, o.Usage)
+}
+
+// EvaluateClassResources evaluates the requested class resources against quota
+func (o *objectCountEvaluator) EvaluateClassResources([]corev1.ClassResourceInfo, runtime.Object) error {
+	return nil
 }
 
 // Verify implementation of interface at compile time.
