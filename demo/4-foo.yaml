@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: foo
+spec:
+  containers:
+  - name: foo
+    image: k8s.gcr.io/pause
+    resources:
+      classes:
+        rdt: foo
+        blockio: bar
+        dummy-2: gold
+        dummy-3: baz
+
+

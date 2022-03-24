@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: denied
+spec:
+  resources:
+    classes:
+      blockio: high-prio
+  containers:
+  - name: container-1
+    image: k8s.gcr.io/pause
+    resources:
+      classes:
+        rdt: guaranteed
+        dummy-1: class-a
+        dummy-2: platinum
+
