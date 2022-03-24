@@ -700,6 +700,34 @@ func describeQuota(resourceQuota *corev1.ResourceQuota) (string, error) {
 			}
 			w.Write(LEVEL_0, msg, resourceName, usedQuantity.String(), hardQuantity.String())
 		}
+
+		// Describe QoS resources
+		if len(resourceQuota.Status.QoSResources.Pod) > 0 || len(resourceQuota.Status.QoSResources.Container) > 0 {
+			w.Write(LEVEL_0, "\nQoS resources:")
+
+			printQoSResources := func(typ string, q []corev1.AllowedQoSResource) {
+				w.Write(LEVEL_1, "\n")
+				w.Write(LEVEL_1, "%s resource\tAllowed classes\n", typ)
+				w.Write(LEVEL_1, "%s---------\t---------------\n", strings.Repeat("-", len(typ)))
+
+				for _, qosResource := range q {
+					classInfos := make([]string, len(qosResource.Classes))
+					for i, c := range qosResource.Classes {
+						classInfos[i] = c.Name
+					}
+					classes := strings.Join(classInfos, ", ")
+					w.Write(LEVEL_1, "%v\t%v\n", qosResource.Name, classes)
+				}
+			}
+
+			if len(resourceQuota.Status.QoSResources.Pod) > 0 {
+				printQoSResources("Pod", resourceQuota.Status.QoSResources.Pod)
+			}
+			if len(resourceQuota.Status.QoSResources.Container) > 0 {
+				printQoSResources("Container", resourceQuota.Status.QoSResources.Container)
+			}
+		}
+
 		return nil
 	})
 }
