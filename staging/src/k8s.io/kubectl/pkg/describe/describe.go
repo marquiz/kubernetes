@@ -725,6 +725,52 @@ func describeQuota(resourceQuota *corev1.ResourceQuota) (string, error) {
 			}
 			w.Write(LEVEL_0, msg, resourceName, usedQuantity.String(), hardQuantity.String())
 		}
+
+		// Describe QoS resources
+		if len(resourceQuota.Status.QOSResources.Pod) > 0 || len(resourceQuota.Status.QOSResources.Container) > 0 {
+			w.Write(LEVEL_0, "\nQoS resources:")
+			getCapa := func(resources []corev1.AllowedQOSResource, name corev1.QOSResourceName, class string) int64 {
+				for _, res := range resources {
+					if res.Name == name {
+						for _, cls := range res.Classes {
+							if cls.Name == class {
+								return cls.Capacity
+							}
+						}
+					}
+				}
+				return 0
+			}
+
+			printQOSResources := func(typ string, used, limits []corev1.AllowedQOSResource) {
+				w.Write(LEVEL_1, "\n")
+				w.Write(LEVEL_1, "%s resource\tAllowed classes (used/limit)\n", typ)
+				w.Write(LEVEL_1, "%s---------\t----------------------------\n", strings.Repeat("-", len(typ)))
+
+				for _, qosResource := range limits {
+					classInfos := make([]string, len(qosResource.Classes))
+					for i, c := range qosResource.Classes {
+						limit := "inf"
+						if c.Capacity > 0 {
+							limit = strconv.FormatInt(c.Capacity, 10)
+						}
+
+						usage := getCapa(used, qosResource.Name, c.Name)
+						classInfos[i] = fmt.Sprintf("%s (%d/%s)", c.Name, usage, limit)
+					}
+					classes := strings.Join(classInfos, "\t")
+					w.Write(LEVEL_1, "%v\t%v\n", qosResource.Name, classes)
+				}
+			}
+
+			if len(resourceQuota.Status.QOSResources.Pod) > 0 {
+				printQOSResources("Pod", resourceQuota.Status.QOSResourcesUsage.Pod, resourceQuota.Status.QOSResources.Pod)
+			}
+			if len(resourceQuota.Status.QOSResources.Container) > 0 {
+				printQOSResources("Container", resourceQuota.Status.QOSResourcesUsage.Container, resourceQuota.Status.QOSResources.Container)
+			}
+		}
+
 		return nil
 	})
 }
