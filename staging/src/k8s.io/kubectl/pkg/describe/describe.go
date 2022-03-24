@@ -697,6 +697,18 @@ func describeQuota(resourceQuota *corev1.ResourceQuota) (string, error) {
 			}
 			w.Write(LEVEL_0, msg, resourceName, usedQuantity.String(), hardQuantity.String())
 		}
+
+		// Describe class resources
+		if len(resourceQuota.Status.ClassResources) > 0 {
+			w.Write(LEVEL_0, "\nClass resource\tAllowed classes\n")
+			w.Write(LEVEL_0, "--------------\t---------------\n")
+
+			for _, classResource := range resourceQuota.Status.ClassResources {
+				classes := strings.Join(classResource.Classes, ", ")
+				w.Write(LEVEL_0, "%v\t%v\n", classResource.Name, classes)
+			}
+		}
+
 		return nil
 	})
 }
