@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: demo
+spec:
+  qosResources:
+    container:
+      - name: rdt
+        classes:
+          - name: bronze
+      - name: blockio
+        classes:
+          - name: normal
+          - name: low-prio
+      - name: dummy-1
+        classes:
+          - name: class-b
+          - name: class-c
+          - name: class-d
