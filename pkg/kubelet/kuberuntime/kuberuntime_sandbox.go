@@ -29,6 +29,7 @@ import (
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/features"
+	kubefeatures "k8s.io/kubernetes/pkg/features"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	runtimeutil "k8s.io/kubernetes/pkg/kubelet/kuberuntime/util"
 	"k8s.io/kubernetes/pkg/kubelet/types"
@@ -88,9 +89,12 @@ func (m *kubeGenericRuntimeManager) generatePodSandboxConfig(pod *v1.Pod, attemp
 			Uid:       podUID,
 			Attempt:   attempt,
 		},
-		Labels:       newPodLabels(pod),
-		Annotations:  newPodAnnotations(pod),
-		QosResources: determinePodQoSResources(pod),
+		Labels:      newPodLabels(pod),
+		Annotations: newPodAnnotations(pod),
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(kubefeatures.QoSResources) {
+		podSandboxConfig.QosResources = determinePodQoSResources(pod)
 	}
 
 	dnsConfig, err := m.runtimeHelper.GetPodDNS(pod)

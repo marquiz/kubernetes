@@ -60,6 +60,12 @@ const (
 	// beta: v1.4
 	AppArmor featuregate.Feature = "AppArmor"
 
+	// owner: @marquiz
+	// alpha: v1.25
+	//
+	// Enable QoS resources.
+	QoSResources featuregate.Feature = "QoSResources"
+
 	// owner: @szuecs
 	// alpha: v1.12
 	//
@@ -848,6 +854,8 @@ var defaultKubernetesFeatureGates = map[featuregate.Feature]featuregate.FeatureS
 	APISelfSubjectReview: {Default: false, PreRelease: featuregate.Alpha},
 
 	AppArmor: {Default: true, PreRelease: featuregate.Beta},
+
+	QoSResources: {Default: false, PreRelease: featuregate.Alpha},
 
 	CPUCFSQuotaPeriod: {Default: false, PreRelease: featuregate.Alpha},
 
