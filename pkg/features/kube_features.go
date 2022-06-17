@@ -663,6 +663,12 @@ const (
 	// bursting into resources requested at higher QoS levels (memory only for now)
 	QOSReserved featuregate.Feature = "QOSReserved"
 
+	// owner: @marquiz
+	// alpha: v1.30
+	//
+	// Enable QoS resources.
+	QOSResources featuregate.Feature = "QoSResources"
+
 	// owner: @chrishenzie
 	// kep: https://kep.k8s.io/2485
 	// alpha: v1.22
@@ -1171,6 +1177,8 @@ var defaultKubernetesFeatureGates = map[featuregate.Feature]featuregate.FeatureS
 	ProcMountType: {Default: false, PreRelease: featuregate.Alpha},
 
 	QOSReserved: {Default: false, PreRelease: featuregate.Alpha},
+
+	QOSResources: {Default: false, PreRelease: featuregate.Alpha},
 
 	ReadWriteOncePod: {Default: true, PreRelease: featuregate.GA, LockToDefault: true}, // remove in 1.31
 
