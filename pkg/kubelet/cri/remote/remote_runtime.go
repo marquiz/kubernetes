@@ -648,9 +648,10 @@ func (r *remoteRuntimeService) UpdateContainerResources(containerID string, reso
 
 	if r.useV1API() {
 		_, err = r.runtimeClient.UpdateContainerResources(ctx, &runtimeapi.UpdateContainerResourcesRequest{
-			ContainerId: containerID,
-			Linux:       resources.GetLinux(),
-			Windows:     resources.GetWindows(),
+			ContainerId:    containerID,
+			Linux:          resources.GetLinux(),
+			Windows:        resources.GetWindows(),
+			ClassResources: resources.GetClassResources(),
 		})
 	} else {
 		_, err = r.runtimeClientV1alpha2.UpdateContainerResources(ctx, &runtimeapiV1alpha2.UpdateContainerResourcesRequest{
