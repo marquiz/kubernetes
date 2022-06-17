@@ -47,6 +47,12 @@ const (
 	// beta: v1.4
 	AppArmor featuregate.Feature = "AppArmor"
 
+	// owner: @marquiz
+	// alpha: v1.25
+	//
+	// Enable class resources.
+	ClassResources featuregate.Feature = "ClassResources"
+
 	// owner: @szuecs
 	// alpha: v1.12
 	//
@@ -886,6 +892,8 @@ var defaultKubernetesFeatureGates = map[featuregate.Feature]featuregate.FeatureS
 	AnyVolumeDataSource: {Default: true, PreRelease: featuregate.Beta}, // on by default in 1.24
 
 	AppArmor: {Default: true, PreRelease: featuregate.Beta},
+
+	ClassResources: {Default: false, PreRelease: featuregate.Alpha},
 
 	CPUCFSQuotaPeriod: {Default: false, PreRelease: featuregate.Alpha},
 
