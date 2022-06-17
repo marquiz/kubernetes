@@ -437,9 +437,10 @@ func (r *remoteRuntimeService) UpdateContainerResources(ctx context.Context, con
 	defer cancel()
 
 	if _, err := r.runtimeClient.UpdateContainerResources(ctx, &runtimeapi.UpdateContainerResourcesRequest{
-		ContainerId: containerID,
-		Linux:       resources.GetLinux(),
-		Windows:     resources.GetWindows(),
+		ContainerId:  containerID,
+		Linux:        resources.GetLinux(),
+		Windows:      resources.GetWindows(),
+		QosResources: resources.GetQosResources(),
 	}); err != nil {
 		klog.ErrorS(err, "UpdateContainerResources from runtime service failed", "containerID", containerID)
 		return err
