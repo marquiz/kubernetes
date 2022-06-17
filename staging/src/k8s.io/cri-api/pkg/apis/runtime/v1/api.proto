@@ -1347,6 +1347,8 @@ message UpdateContainerResourcesRequest {
     // container resources updating. This can be used for specifying experimental
     // resources to update or other options to use when updating the container.
     map<string, string> annotations = 4;
+    // Configuration of QoS resources.
+    repeated ContainerQOSResource QOS_resources = 5;
 }
 
 message UpdateContainerResourcesResponse {}
