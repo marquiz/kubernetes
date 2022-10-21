@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: demo
+spec:
+  qosResources:
+    pod:
+      - name: podres-1
+        classes:
+          - name: qos-b
+          - name: qos-c
+            capacity: 1
+    container:
+      - name: rdt
+        classes:
+          - name: bronze
+            capacity: 2
+      - name: blockio
+        classes:
+          - name: normal
+          - name: low-prio
+      - name: dummy-1
+        classes:
+          - name: class-b
+          - name: class-c
+          - name: class-d
+            capacity: 1

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo3
+spec:
+  containers:
+  - name: cnt-1
+    image: k8s.gcr.io/pause
+    resources:
+      qosResources:
+        rdt: bronze
+        dummy-1: class-d
+
+  - name: cnt-2
+    image: k8s.gcr.io/pause
+    resources:
+      qosResources:
+        rdt: bronze
