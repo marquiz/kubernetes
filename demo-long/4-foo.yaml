@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: foo
+spec:
+  resources:
+    qosResources:
+      podres-notexists: cls-1
+      podres-1: foo
+  containers:
+  - name: foo
+    image: k8s.gcr.io/pause
+    resources:
+      qosResources:
+        rdt: foo
+        blockio: bar
+        dummy-2: gold
+        dummy-3: baz
+
+
