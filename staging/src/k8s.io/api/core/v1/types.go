@@ -5208,6 +5208,10 @@ type NodeConfigStatus struct {
 type QoSResourceClassInfo struct {
 	// Name of the class.
 	Name string `json:"name" protobuf:"bytes,1,name=name"`
+	// Capacity is the number of maximum allowed simultaneous assignments into this class
+	// Zero means "infinite" capacity i.e. the usage is not restricted
+	// +optional
+	Capacity int64 `json:"capacity,omitempty" protobuf:"varint,2,opt,name=capacity"`
 }
 
 // QoSResourceInfo contains information about one QoS resource type.
