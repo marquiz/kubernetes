@@ -1536,6 +1536,10 @@ message QoSResourceInfo {
 message QoSResourceClassInfo {
     // Name of the class
     string name = 1;
+    // Capacity is the number of maximum allowed simultaneous assignments into this class
+    // Zero means "infinite" capacity i.e. the usage is not restricted.
+    uint64 capacity = 2;
+
 }
 
 message StatusRequest {
