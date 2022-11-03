@@ -5308,6 +5308,9 @@ type AllowedQoSResource struct {
 type AllowedQoSResourceClass struct {
 	// Name of the class.
 	Name string
+	// Capacity is the hard limit for usage of the class.
+	// +optional
+	Capacity int64
 }
 
 // ScopeSelector represents the AND of the selectors represented
@@ -5358,6 +5361,10 @@ type ResourceQuotaStatus struct {
 	// +featureGate=QoSResources
 	// +optional
 	QoSResources QoSResourceQuota
+	// QoSResourcesUsage contains the observed usage of QoS resources in the namespace.
+	// +featureGate=QoSResources
+	// +optional
+	QoSResourcesUsage QoSResourceQuota
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

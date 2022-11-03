@@ -6251,6 +6251,9 @@ type AllowedQoSResource struct {
 type AllowedQoSResourceClass struct {
 	// Name of the class.
 	Name string `json:"name" protobuf:"bytes,1,name=name"`
+	// Capacity is the hard limit for usage of the class.
+	// +optional
+	Capacity int64 `json:"capacity,omitempty" protobuf:"varint,2,opt,name=capacity"`
 }
 
 // A scope selector represents the AND of the selectors represented
@@ -6303,6 +6306,10 @@ type ResourceQuotaStatus struct {
 	// +featureGate=QoSResources
 	// +optional
 	QoSResources QoSResourceQuota `json:"qosResources,omitempty" protobuf:"bytes,3,name=qosResources"`
+	// QoSResourcesUsage contains the observed usage of QoS resources in the namespace.
+	// +featureGate=QoSResources
+	// +optional
+	QoSResourcesUsage QoSResourceQuota `json:"qosResourcesUsage,omitempty" protobuf:"bytes,4,name=qosResourcesUsage"`
 }
 
 // +genclient
