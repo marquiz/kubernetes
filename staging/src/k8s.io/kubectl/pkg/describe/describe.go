@@ -3727,27 +3727,31 @@ func describeNode(node *corev1.Node, nodeNonTerminatedPodsList *corev1.PodList, 
 		}
 
 		printQoSResources := func(resourceList []corev1.QoSResourceInfo) {
-			w.Write(LEVEL_1, "Name\tMutable\tClasses\n")
-			w.Write(LEVEL_1, "----\t-------\t-------\n")
+			w.Write(LEVEL_1, "Name\tMutable\tClasses (capacity)\n")
+			w.Write(LEVEL_1, "----\t-------\t------------------\n")
 
 			sort.Slice(resourceList, func(i, j int) bool { return resourceList[i].Name < resourceList[j].Name })
 			for _, resource := range resourceList {
 				mutable := map[bool]string{false: "No", true: "Yes"}[resource.Mutable]
 				classes := make([]string, len(resource.Classes))
 				for i, c := range resource.Classes {
-					classes[i] = c.Name
+					capacity := "inf"
+					if c.Capacity > 0 {
+						capacity = strconv.FormatInt(c.Capacity, 10)
+					}
+					classes[i] = fmt.Sprintf("%s (%s)", c.Name, capacity)
 				}
 
-				w.Write(LEVEL_1, "%s\t%s\t%s\n", resource.Name, mutable, strings.Join(classes, ", "))
+				w.Write(LEVEL_1, "%s\t%s\t%s\n", resource.Name, mutable, strings.Join(classes, "\t"))
 			}
 		}
 
 		if len(node.Status.QoSResources.PodQoSResources) > 0 {
-			w.Write(LEVEL_0, "Pod QoS Resources:\n")
+			w.Write(LEVEL_0, "Pod QoS resources:\n")
 			printQoSResources(node.Status.QoSResources.PodQoSResources)
 		}
 		if len(node.Status.QoSResources.ContainerQoSResources) > 0 {
-			w.Write(LEVEL_0, "Container QoS Resources:\n")
+			w.Write(LEVEL_0, "Container QoS resources:\n")
 			printQoSResources(node.Status.QoSResources.ContainerQoSResources)
 		}
 
@@ -4280,6 +4284,68 @@ func describeNodeResource(nodeNonTerminatedPodsList *corev1.PodList, node *corev
 		extRequests, extLimits := reqs[corev1.ResourceName(ext)], limits[corev1.ResourceName(ext)]
 		w.Write(LEVEL_1, "%s\t%s\t%s\n", ext, extRequests.String(), extLimits.String())
 	}
+
+	printQoSResources := func(usage, capacity resourcehelper.QoSResources) {
+		w.Write(LEVEL_1, "Name\tClasses\n")
+		w.Write(LEVEL_1, "----\t-------\n")
+
+		resNamesSet := map[corev1.QoSResourceName]struct{}{}
+		for k := range usage {
+			resNamesSet[k] = struct{}{}
+		}
+		for k := range capacity {
+			resNamesSet[k] = struct{}{}
+		}
+		resNames := make([]corev1.QoSResourceName, 0, len(resNamesSet))
+		for k := range resNamesSet {
+			resNames = append(resNames, k)
+		}
+		sort.Slice(resNames, func(i, j int) bool { return resNames[i] < resNames[j] })
+
+		for _, resName := range resNames {
+			clsNamesSet := map[string]struct{}{}
+			for k := range usage[resName] {
+				clsNamesSet[k] = struct{}{}
+			}
+			for k := range capacity[resName] {
+				clsNamesSet[k] = struct{}{}
+			}
+			clsNames := make([]string, 0, len(clsNamesSet))
+			for k := range clsNamesSet {
+				clsNames = append(clsNames, k)
+			}
+			sort.Strings(clsNames)
+
+			classes := make([]string, len(clsNames))
+			for i, clsName := range clsNames {
+				_, _, used := usage.GetCapacity(resName, clsName)
+				exists, totalExists, total := capacity.GetCapacity(resName, clsName)
+				capa := "?"
+				if !totalExists {
+					capa = "inf"
+				} else if exists {
+					capa = fmt.Sprintf("%d", total)
+				}
+				classes[i] = fmt.Sprintf("%s (%d/%s)", clsName, used, capa)
+			}
+
+			w.Write(LEVEL_1, "%s\t%s\n", resName, strings.Join(classes, "\t"))
+		}
+	}
+
+	podQoSResources, containerQoSResources := getPodsTotalQoSResourceUsage(nodeNonTerminatedPodsList)
+
+	capacity := resourcehelper.ConvertQoSResourceStatus(node.Status.QoSResources.PodQoSResources)
+	if len(capacity) > 0 || len(podQoSResources) > 0 {
+		w.Write(LEVEL_0, "Allocated Pod QoS resources:\n")
+		printQoSResources(podQoSResources, capacity)
+	}
+
+	capacity = resourcehelper.ConvertQoSResourceStatus(node.Status.QoSResources.ContainerQoSResources)
+	if len(capacity) > 0 || len(containerQoSResources) > 0 {
+		w.Write(LEVEL_0, "Allocated Container QoS resoures:\n")
+		printQoSResources(containerQoSResources, capacity)
+	}
 }
 
 func getPodsTotalRequestsAndLimits(podList *corev1.PodList) (reqs map[corev1.ResourceName]resource.Quantity, limits map[corev1.ResourceName]resource.Quantity) {
@@ -4304,6 +4370,17 @@ func getPodsTotalRequestsAndLimits(podList *corev1.PodList) (reqs map[corev1.Res
 		}
 	}
 	return
+}
+
+func getPodsTotalQoSResourceUsage(podList *corev1.PodList) (podres, containerres resourcehelper.QoSResources) {
+	podres, containerres = resourcehelper.QoSResources{}, resourcehelper.QoSResources{}
+	for _, pod := range podList.Items {
+		p, c := resourcehelper.CalculatePodQoSResourceUsage(&pod)
+
+		podres.Sum(p)
+		containerres.Sum(c)
+	}
+	return podres, containerres
 }
 
 func DescribeEvents(el *corev1.EventList, w PrefixWriter) {
