@@ -446,7 +446,9 @@ type Resource struct {
 
 type QoSResources map[v1.QoSResourceName]QoSResourceClasses
 
-type QoSResourceClasses map[string]struct{}
+// QoSResourceClasses stores a set of classes (of one type of QoS-class
+// resource) plus their capacities. Nil pointer implies infinite capacity.
+type QoSResourceClasses map[string]*int64
 
 // NewResource creates a Resource
 func NewResource(rl v1.ResourceList, crl v1.QoSResourceStatus) *Resource {
@@ -491,7 +493,13 @@ func (r *Resource) SetQoSResources(crl v1.QoSResourceStatus) {
 		for _, cr := range in {
 			classes := make(QoSResourceClasses, len(cr.Classes))
 			for _, c := range cr.Classes {
-				classes[c.Name] = struct{}{}
+				if c.Capacity > 0 {
+					pc := new(int64)
+					*pc = c.Capacity
+					classes[c.Name] = pc
+				} else {
+					classes[c.Name] = nil
+				}
 			}
 			out[cr.Name] = classes
 		}
@@ -508,7 +516,7 @@ func (r *Resource) AddPodQoSResources(crl map[v1.QoSResourceName]string) {
 	}
 
 	for name, class := range crl {
-		r.AddPodQoSResource(name, class)
+		r.AddPodQoSResource(name, class, 1)
 	}
 }
 
@@ -518,28 +526,89 @@ func (r *Resource) AddContainerQoSResources(crl map[v1.QoSResourceName]string) {
 	}
 
 	for name, class := range crl {
-		r.AddContainerQoSResource(name, class)
+		r.AddContainerQoSResource(name, class, 1)
 	}
 }
 
-func (r *Resource) AddPodQoSResource(name v1.QoSResourceName, class string) {
+func (r *Resource) SetMaxContainerQoSResources(crl map[v1.QoSResourceName]string) {
+	if r == nil {
+		return
+	}
+
+	for name, class := range crl {
+		if r.ContainerQoSResources == nil ||
+			r.ContainerQoSResources[name] == nil ||
+			r.ContainerQoSResources[name][class] == nil ||
+			*r.ContainerQoSResources[name][class] == 0 {
+			r.AddContainerQoSResource(name, class, 1)
+		}
+	}
+}
+
+func (r *Resource) AddPodQoSResource(name v1.QoSResourceName, class string, amount int64) {
 	if r.PodQoSResources == nil {
-		r.PodQoSResources = make(map[v1.QoSResourceName]QoSResourceClasses)
+		r.PodQoSResources = make(QoSResources)
 	}
-	if r.PodQoSResources[name] == nil {
-		r.PodQoSResources[name] = make(QoSResourceClasses)
-	}
-	r.PodQoSResources[name][class] = struct{}{}
+	r.PodQoSResources.add(name, class, amount)
 }
 
-func (r *Resource) AddContainerQoSResource(name v1.QoSResourceName, class string) {
+func (r *Resource) AddContainerQoSResource(name v1.QoSResourceName, class string, amount int64) {
 	if r.ContainerQoSResources == nil {
-		r.ContainerQoSResources = make(map[v1.QoSResourceName]QoSResourceClasses)
+		r.ContainerQoSResources = make(QoSResources)
 	}
-	if r.ContainerQoSResources[name] == nil {
-		r.ContainerQoSResources[name] = make(QoSResourceClasses)
+	r.ContainerQoSResources.add(name, class, amount)
+}
+
+// GetCapacity gets the capacity of one class of a QoS resource. It returns
+// two booleans and an integer. The first boolean tells whether the resource
+// type and the class exist and the second whether it has capacity defined or
+// not. Integer specifies the capacity and is only valid if both booleans are
+// true.
+func (r *QoSResources) GetCapacity(name v1.QoSResourceName, class string) (bool, bool, int64) {
+	if r == nil || *r == nil {
+		return false, false, 0
 	}
-	r.ContainerQoSResources[name][class] = struct{}{}
+	if _, ok := (*r)[name]; !ok {
+		// Resource does not exist
+		return false, false, 0
+	}
+	if capa, ok := (*r)[name][class]; ok {
+		if capa != nil {
+			return true, true, *capa
+		}
+		return true, false, 0
+	}
+	// Class does not exist
+	return false, false, 0
+}
+
+func (r *QoSResources) add(name v1.QoSResourceName, class string, amount int64) {
+	if r == nil {
+		return
+	}
+	if *r == nil {
+		*r = make(QoSResources)
+	}
+	if (*r)[name] == nil {
+		(*r)[name] = make(QoSResourceClasses)
+	}
+	if (*r)[name][class] == nil {
+		(*r)[name][class] = new(int64)
+	}
+	*(*r)[name][class] += amount
+}
+
+func (r *QoSResources) sum(r2 *QoSResources, sign int64) {
+	if r == nil || r2 == nil {
+		return
+	}
+	for resName, cr := range *r2 {
+		for clsName, vp := range cr {
+			if vp != nil {
+				r.add(resName, clsName, sign*(*vp))
+			}
+		}
+	}
 }
 
 func (r *QoSResources) clone() *QoSResources {
@@ -549,8 +618,14 @@ func (r *QoSResources) clone() *QoSResources {
 	out := make(QoSResources, len(*r))
 	for k, v := range *r {
 		classes := make(QoSResourceClasses, len(v))
-		for c := range v {
-			classes[c] = struct{}{}
+		for c, capa := range v {
+			if capa == nil {
+				classes[c] = nil
+			} else {
+				p := new(int64)
+				*p = *capa
+				classes[c] = p
+			}
 		}
 		out[k] = classes
 	}
@@ -785,6 +860,10 @@ func (n *NodeInfo) update(pod *v1.Pod, sign int64) {
 	n.NonZeroRequested.MilliCPU += sign * non0CPU
 	n.NonZeroRequested.Memory += sign * non0Mem
 
+	// Handle QoS resources
+	n.Requested.PodQoSResources.sum(&res.PodQoSResources, sign)
+	n.Requested.ContainerQoSResources.sum(&res.ContainerQoSResources, sign)
+
 	// Consume ports when pod added or release ports when pod removed.
 	n.updateUsedPorts(pod, sign > 0)
 	n.updatePVCRefCounts(pod, sign > 0)
@@ -821,6 +900,8 @@ func calculateResource(pod *v1.Pod) (res Resource, non0CPU int64, non0Mem int64)
 		non0CPU += non0CPUReq
 		non0Mem += non0MemReq
 		// No non-zero resources for GPUs or opaque resources.
+
+		res.AddContainerQoSResources(c.Resources.QoSResources)
 	}
 
 	for _, ic := range pod.Spec.InitContainers {
@@ -828,6 +909,8 @@ func calculateResource(pod *v1.Pod) (res Resource, non0CPU int64, non0Mem int64)
 		non0CPUReq, non0MemReq := schedutil.GetNonzeroRequests(&ic.Resources.Requests)
 		non0CPU = max(non0CPU, non0CPUReq)
 		non0Mem = max(non0Mem, non0MemReq)
+
+		res.SetMaxContainerQoSResources(ic.Resources.QoSResources)
 	}
 
 	// If Overhead is being utilized, add to the total requests for the pod
@@ -841,6 +924,9 @@ func calculateResource(pod *v1.Pod) (res Resource, non0CPU int64, non0Mem int64)
 			non0Mem += pod.Spec.Overhead.Memory().Value()
 		}
 	}
+
+	// Handle pod-level QoS resources
+	res.AddPodQoSResources(pod.Spec.Resources.QoSResources)
 
 	return
 }
