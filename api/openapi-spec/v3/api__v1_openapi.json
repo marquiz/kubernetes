@@ -293,6 +293,11 @@
       "io.k8s.api.core.v1.AllowedQoSResourceClass": {
         "description": "AllowedQoSResourceClass specifies one allowed class of a QoS resource and possible limits for its usage.",
         "properties": {
+          "capacity": {
+            "description": "Capacity is the hard limit for usage of the class.",
+            "format": "int64",
+            "type": "integer"
+          },
           "name": {
             "default": "",
             "description": "Name of the class.",
@@ -5748,6 +5753,11 @@
       "io.k8s.api.core.v1.QoSResourceClassInfo": {
         "description": "QoSResourceClassInfo contains information about single class of one QoS resource.",
         "properties": {
+          "capacity": {
+            "description": "Capacity is the number of maximum allowed simultaneous assignments into this class Zero means \"infinite\" capacity i.e. the usage is not restricted",
+            "format": "int64",
+            "type": "integer"
+          },
           "name": {
             "default": "",
             "description": "Name of the class.",
@@ -6406,6 +6416,15 @@
             ],
             "default": {},
             "description": "QoSResources contains the enforced set of available QoS resources."
+          },
+          "qosResourcesUsage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/io.k8s.api.core.v1.QoSResourceQuota"
+              }
+            ],
+            "default": {},
+            "description": "QoSResourcesUsage contains the observed usage of QoS resources in the namespace."
           },
           "used": {
             "additionalProperties": {

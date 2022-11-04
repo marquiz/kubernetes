@@ -21,7 +21,8 @@ package v1
 // QoSResourceClassInfoApplyConfiguration represents an declarative configuration of the QoSResourceClassInfo type for use
 // with apply.
 type QoSResourceClassInfoApplyConfiguration struct {
-	Name *string `json:"name,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	Capacity *int64  `json:"capacity,omitempty"`
 }
 
 // QoSResourceClassInfoApplyConfiguration constructs an declarative configuration of the QoSResourceClassInfo type for use with
@@ -35,5 +36,13 @@ func QoSResourceClassInfo() *QoSResourceClassInfoApplyConfiguration {
 // If called multiple times, the Name field is set to the value of the last call.
 func (b *QoSResourceClassInfoApplyConfiguration) WithName(value string) *QoSResourceClassInfoApplyConfiguration {
 	b.Name = &value
+	return b
+}
+
+// WithCapacity sets the Capacity field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Capacity field is set to the value of the last call.
+func (b *QoSResourceClassInfoApplyConfiguration) WithCapacity(value int64) *QoSResourceClassInfoApplyConfiguration {
+	b.Capacity = &value
 	return b
 }

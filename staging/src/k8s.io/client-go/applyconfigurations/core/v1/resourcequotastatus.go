@@ -25,9 +25,10 @@ import (
 // ResourceQuotaStatusApplyConfiguration represents an declarative configuration of the ResourceQuotaStatus type for use
 // with apply.
 type ResourceQuotaStatusApplyConfiguration struct {
-	Hard         *v1.ResourceList                    `json:"hard,omitempty"`
-	Used         *v1.ResourceList                    `json:"used,omitempty"`
-	QoSResources *QoSResourceQuotaApplyConfiguration `json:"qosResources,omitempty"`
+	Hard              *v1.ResourceList                    `json:"hard,omitempty"`
+	Used              *v1.ResourceList                    `json:"used,omitempty"`
+	QoSResources      *QoSResourceQuotaApplyConfiguration `json:"qosResources,omitempty"`
+	QoSResourcesUsage *QoSResourceQuotaApplyConfiguration `json:"qosResourcesUsage,omitempty"`
 }
 
 // ResourceQuotaStatusApplyConfiguration constructs an declarative configuration of the ResourceQuotaStatus type for use with
@@ -57,5 +58,13 @@ func (b *ResourceQuotaStatusApplyConfiguration) WithUsed(value v1.ResourceList) 
 // If called multiple times, the QoSResources field is set to the value of the last call.
 func (b *ResourceQuotaStatusApplyConfiguration) WithQoSResources(value *QoSResourceQuotaApplyConfiguration) *ResourceQuotaStatusApplyConfiguration {
 	b.QoSResources = value
+	return b
+}
+
+// WithQoSResourcesUsage sets the QoSResourcesUsage field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the QoSResourcesUsage field is set to the value of the last call.
+func (b *ResourceQuotaStatusApplyConfiguration) WithQoSResourcesUsage(value *QoSResourceQuotaApplyConfiguration) *ResourceQuotaStatusApplyConfiguration {
+	b.QoSResourcesUsage = value
 	return b
 }

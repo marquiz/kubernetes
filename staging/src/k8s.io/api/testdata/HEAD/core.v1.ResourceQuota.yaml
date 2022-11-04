@@ -38,11 +38,13 @@ spec:
   qosResources:
     container:
     - classes:
-      - name: nameValue
+      - capacity: 2
+        name: nameValue
       name: nameValue
     pod:
     - classes:
-      - name: nameValue
+      - capacity: 2
+        name: nameValue
       name: nameValue
   scopeSelector:
     matchExpressions:
@@ -58,11 +60,24 @@ status:
   qosResources:
     container:
     - classes:
-      - name: nameValue
+      - capacity: 2
+        name: nameValue
       name: nameValue
     pod:
     - classes:
-      - name: nameValue
+      - capacity: 2
+        name: nameValue
+      name: nameValue
+  qosResourcesUsage:
+    container:
+    - classes:
+      - capacity: 2
+        name: nameValue
+      name: nameValue
+    pod:
+    - classes:
+      - capacity: 2
+        name: nameValue
       name: nameValue
   used:
     usedKey: "0"

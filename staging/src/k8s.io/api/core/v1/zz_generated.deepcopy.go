@@ -4917,6 +4917,7 @@ func (in *ResourceQuotaStatus) DeepCopyInto(out *ResourceQuotaStatus) {
 		}
 	}
 	in.QoSResources.DeepCopyInto(&out.QoSResources)
+	in.QoSResourcesUsage.DeepCopyInto(&out.QoSResourcesUsage)
 	return
 }
 

@@ -111,12 +111,14 @@ status:
   qosResources:
     containerQoSResources:
     - classes:
-      - name: nameValue
+      - capacity: 2
+        name: nameValue
       mutable: true
       name: nameValue
     podQoSResources:
     - classes:
-      - name: nameValue
+      - capacity: 2
+        name: nameValue
       mutable: true
       name: nameValue
   volumesAttached:

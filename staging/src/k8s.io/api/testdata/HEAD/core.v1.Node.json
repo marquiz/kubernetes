@@ -164,7 +164,8 @@
           "mutable": true,
           "classes": [
             {
-              "name": "nameValue"
+              "name": "nameValue",
+              "capacity": 2
             }
           ]
         }
@@ -175,7 +176,8 @@
           "mutable": true,
           "classes": [
             {
-              "name": "nameValue"
+              "name": "nameValue",
+              "capacity": 2
             }
           ]
         }

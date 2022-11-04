@@ -61,8 +61,9 @@ func (AllowedQoSResource) SwaggerDoc() map[string]string {
 }
 
 var map_AllowedQoSResourceClass = map[string]string{
-	"":     "AllowedQoSResourceClass specifies one allowed class of a QoS resource and possible limits for its usage.",
-	"name": "Name of the class.",
+	"":         "AllowedQoSResourceClass specifies one allowed class of a QoS resource and possible limits for its usage.",
+	"name":     "Name of the class.",
+	"capacity": "Capacity is the hard limit for usage of the class.",
 }
 
 func (AllowedQoSResourceClass) SwaggerDoc() map[string]string {
@@ -1880,8 +1881,9 @@ func (ProjectedVolumeSource) SwaggerDoc() map[string]string {
 }
 
 var map_QoSResourceClassInfo = map[string]string{
-	"":     "QoSResourceClassInfo contains information about single class of one QoS resource.",
-	"name": "Name of the class.",
+	"":         "QoSResourceClassInfo contains information about single class of one QoS resource.",
+	"name":     "Name of the class.",
+	"capacity": "Capacity is the number of maximum allowed simultaneous assignments into this class Zero means \"infinite\" capacity i.e. the usage is not restricted",
 }
 
 func (QoSResourceClassInfo) SwaggerDoc() map[string]string {
@@ -2090,10 +2092,11 @@ func (ResourceQuotaSpec) SwaggerDoc() map[string]string {
 }
 
 var map_ResourceQuotaStatus = map[string]string{
-	"":             "ResourceQuotaStatus defines the enforced hard limits and observed use.",
-	"hard":         "Hard is the set of enforced hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
-	"used":         "Used is the current observed total usage of the resource in the namespace.",
-	"qosResources": "QoSResources contains the enforced set of available QoS resources.",
+	"":                  "ResourceQuotaStatus defines the enforced hard limits and observed use.",
+	"hard":              "Hard is the set of enforced hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
+	"used":              "Used is the current observed total usage of the resource in the namespace.",
+	"qosResources":      "QoSResources contains the enforced set of available QoS resources.",
+	"qosResourcesUsage": "QoSResourcesUsage contains the observed usage of QoS resources in the namespace.",
 }
 
 func (ResourceQuotaStatus) SwaggerDoc() map[string]string {

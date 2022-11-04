@@ -3714,6 +3714,9 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: io.k8s.api.core.v1.AllowedQoSResourceClass
   map:
     fields:
+    - name: capacity
+      type:
+        scalar: numeric
     - name: name
       type:
         scalar: string
@@ -6330,6 +6333,9 @@ var schemaYAML = typed.YAMLObject(`types:
 - name: io.k8s.api.core.v1.QoSResourceClassInfo
   map:
     fields:
+    - name: capacity
+      type:
+        scalar: numeric
     - name: name
       type:
         scalar: string
@@ -6625,6 +6631,10 @@ var schemaYAML = typed.YAMLObject(`types:
           elementType:
             namedType: io.k8s.apimachinery.pkg.api.resource.Quantity
     - name: qosResources
+      type:
+        namedType: io.k8s.api.core.v1.QoSResourceQuota
+      default: {}
+    - name: qosResourcesUsage
       type:
         namedType: io.k8s.api.core.v1.QoSResourceQuota
       default: {}

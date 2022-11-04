@@ -15815,6 +15815,13 @@ func schema_k8sio_api_core_v1_AllowedQoSResourceClass(ref common.ReferenceCallba
 							Format:      "",
 						},
 					},
+					"capacity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Capacity is the hard limit for usage of the class.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
 				},
 				Required: []string{"name"},
 			},
@@ -24326,6 +24333,13 @@ func schema_k8sio_api_core_v1_QoSResourceClassInfo(ref common.ReferenceCallback)
 							Format:      "",
 						},
 					},
+					"capacity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Capacity is the number of maximum allowed simultaneous assignments into this class Zero means \"infinite\" capacity i.e. the usage is not restricted",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
 				},
 				Required: []string{"name"},
 			},
@@ -25305,6 +25319,13 @@ func schema_k8sio_api_core_v1_ResourceQuotaStatus(ref common.ReferenceCallback) 
 					"qosResources": {
 						SchemaProps: spec.SchemaProps{
 							Description: "QoSResources contains the enforced set of available QoS resources.",
+							Default:     map[string]interface{}{},
+							Ref:         ref("k8s.io/api/core/v1.QoSResourceQuota"),
+						},
+					},
+					"qosResourcesUsage": {
+						SchemaProps: spec.SchemaProps{
+							Description: "QoSResourcesUsage contains the observed usage of QoS resources in the namespace.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("k8s.io/api/core/v1.QoSResourceQuota"),
 						},

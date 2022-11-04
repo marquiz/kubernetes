@@ -21,7 +21,8 @@ package v1
 // AllowedQoSResourceClassApplyConfiguration represents an declarative configuration of the AllowedQoSResourceClass type for use
 // with apply.
 type AllowedQoSResourceClassApplyConfiguration struct {
-	Name *string `json:"name,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	Capacity *int64  `json:"capacity,omitempty"`
 }
 
 // AllowedQoSResourceClassApplyConfiguration constructs an declarative configuration of the AllowedQoSResourceClass type for use with
@@ -35,5 +36,13 @@ func AllowedQoSResourceClass() *AllowedQoSResourceClassApplyConfiguration {
 // If called multiple times, the Name field is set to the value of the last call.
 func (b *AllowedQoSResourceClassApplyConfiguration) WithName(value string) *AllowedQoSResourceClassApplyConfiguration {
 	b.Name = &value
+	return b
+}
+
+// WithCapacity sets the Capacity field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Capacity field is set to the value of the last call.
+func (b *AllowedQoSResourceClassApplyConfiguration) WithCapacity(value int64) *AllowedQoSResourceClassApplyConfiguration {
+	b.Capacity = &value
 	return b
 }

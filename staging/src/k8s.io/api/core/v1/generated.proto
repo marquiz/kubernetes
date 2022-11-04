@@ -91,6 +91,10 @@ message AllowedQoSResource {
 message AllowedQoSResourceClass {
   // Name of the class.
   optional string name = 1;
+
+  // Capacity is the hard limit for usage of the class.
+  // +optional
+  optional int64 capacity = 2;
 }
 
 // AttachedVolume describes a volume attached to a node
@@ -4176,6 +4180,11 @@ message ProjectedVolumeSource {
 message QoSResourceClassInfo {
   // Name of the class.
   optional string name = 1;
+
+  // Capacity is the number of maximum allowed simultaneous assignments into this class
+  // Zero means "infinite" capacity i.e. the usage is not restricted
+  // +optional
+  optional int64 capacity = 2;
 }
 
 // QoSResourceInfo contains information about one QoS resource type.
@@ -4575,6 +4584,11 @@ message ResourceQuotaStatus {
   // +featureGate=QoSResources
   // +optional
   optional QoSResourceQuota qosResources = 3;
+
+  // QoSResourcesUsage contains the observed usage of QoS resources in the namespace.
+  // +featureGate=QoSResources
+  // +optional
+  optional QoSResourceQuota qosResourcesUsage = 4;
 }
 
 // ResourceRequirements describes the compute resource requirements.

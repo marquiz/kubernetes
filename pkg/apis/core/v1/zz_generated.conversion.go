@@ -2399,6 +2399,7 @@ func Convert_core_AllowedQoSResource_To_v1_AllowedQoSResource(in *core.AllowedQo
 
 func autoConvert_v1_AllowedQoSResourceClass_To_core_AllowedQoSResourceClass(in *v1.AllowedQoSResourceClass, out *core.AllowedQoSResourceClass, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Capacity = in.Capacity
 	return nil
 }
 
@@ -2409,6 +2410,7 @@ func Convert_v1_AllowedQoSResourceClass_To_core_AllowedQoSResourceClass(in *v1.A
 
 func autoConvert_core_AllowedQoSResourceClass_To_v1_AllowedQoSResourceClass(in *core.AllowedQoSResourceClass, out *v1.AllowedQoSResourceClass, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Capacity = in.Capacity
 	return nil
 }
 
@@ -6853,6 +6855,7 @@ func Convert_core_ProjectedVolumeSource_To_v1_ProjectedVolumeSource(in *core.Pro
 
 func autoConvert_v1_QoSResourceClassInfo_To_core_QoSResourceClassInfo(in *v1.QoSResourceClassInfo, out *core.QoSResourceClassInfo, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Capacity = in.Capacity
 	return nil
 }
 
@@ -6863,6 +6866,7 @@ func Convert_v1_QoSResourceClassInfo_To_core_QoSResourceClassInfo(in *v1.QoSReso
 
 func autoConvert_core_QoSResourceClassInfo_To_v1_QoSResourceClassInfo(in *core.QoSResourceClassInfo, out *v1.QoSResourceClassInfo, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Capacity = in.Capacity
 	return nil
 }
 
@@ -7363,6 +7367,9 @@ func autoConvert_v1_ResourceQuotaStatus_To_core_ResourceQuotaStatus(in *v1.Resou
 	if err := Convert_v1_QoSResourceQuota_To_core_QoSResourceQuota(&in.QoSResources, &out.QoSResources, s); err != nil {
 		return err
 	}
+	if err := Convert_v1_QoSResourceQuota_To_core_QoSResourceQuota(&in.QoSResourcesUsage, &out.QoSResourcesUsage, s); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -7375,6 +7382,9 @@ func autoConvert_core_ResourceQuotaStatus_To_v1_ResourceQuotaStatus(in *core.Res
 	out.Hard = *(*v1.ResourceList)(unsafe.Pointer(&in.Hard))
 	out.Used = *(*v1.ResourceList)(unsafe.Pointer(&in.Used))
 	if err := Convert_core_QoSResourceQuota_To_v1_QoSResourceQuota(&in.QoSResources, &out.QoSResources, s); err != nil {
+		return err
+	}
+	if err := Convert_core_QoSResourceQuota_To_v1_QoSResourceQuota(&in.QoSResourcesUsage, &out.QoSResourcesUsage, s); err != nil {
 		return err
 	}
 	return nil
