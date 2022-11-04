@@ -252,7 +252,8 @@ func (e *quotaEvaluator) checkQuotas(quotas []corev1.ResourceQuota, admissionAtt
 		// that means that no quota docs applied, so it can get a pass
 		atLeastOneChangeForThisWaiter := false
 		for j := range newQuotas {
-			if !quota.Equals(quotas[j].Status.Used, newQuotas[j].Status.Used) {
+			if !quota.Equals(quotas[j].Status.Used, newQuotas[j].Status.Used) ||
+				!quota.QoSResourceEquals(quotas[j].Status.QoSResourcesUsage, newQuotas[j].Status.QoSResourcesUsage) {
 				atLeastOneChanged = true
 				atLeastOneChangeForThisWaiter = true
 				break
@@ -281,7 +282,8 @@ func (e *quotaEvaluator) checkQuotas(quotas []corev1.ResourceQuota, admissionAtt
 		newQuota := quotas[i]
 
 		// if this quota didn't have its status changed, skip it
-		if quota.Equals(originalQuotas[i].Status.Used, newQuota.Status.Used) {
+		if quota.Equals(originalQuotas[i].Status.Used, newQuota.Status.Used) &&
+			quota.QoSResourceEquals(originalQuotas[i].Status.QoSResourcesUsage, newQuota.Status.QoSResourcesUsage) {
 			continue
 		}
 
