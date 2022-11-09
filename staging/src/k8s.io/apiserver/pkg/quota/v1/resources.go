@@ -260,7 +260,7 @@ func ToSet(resourceNames []corev1.ResourceName) sets.String {
 
 // CalculateUsage calculates and returns the requested ResourceList usage.
 // If an error is returned, usage only contains the resources which encountered no calculation errors.
-func CalculateUsage(namespaceName string, scopes []corev1.ResourceQuotaScope, hardLimits corev1.ResourceList, registry Registry, scopeSelector *corev1.ScopeSelector) (corev1.ResourceList, error) {
+func CalculateUsage(namespaceName string, scopes []corev1.ResourceQuotaScope, hardLimits corev1.ResourceList, registry Registry, scopeSelector *corev1.ScopeSelector) (corev1.ResourceList, corev1.QOSResourceQuota, error) {
 	// find the intersection between the hard resources on the quota
 	// and the resources this controller can track to know what we can
 	// look to measure updated usage stats for
@@ -277,12 +277,9 @@ func CalculateUsage(namespaceName string, scopes []corev1.ResourceQuotaScope, ha
 
 	// sum the observed usage from each evaluator
 	newUsage := corev1.ResourceList{}
+	qosResourceUsage := corev1.QOSResourceQuota{}
 	for _, evaluator := range evaluators {
-		// only trigger the evaluator if it matches a resource in the quota, otherwise, skip calculating anything
 		intersection := evaluator.MatchingResources(matchedResources)
-		if len(intersection) == 0 {
-			continue
-		}
 
 		usageStatsOptions := UsageStatsOptions{Namespace: namespaceName, Scopes: scopes, Resources: intersection, ScopeSelector: scopeSelector}
 		stats, err := evaluator.UsageStats(usageStatsOptions)
@@ -294,11 +291,13 @@ func CalculateUsage(namespaceName string, scopes []corev1.ResourceQuotaScope, ha
 			continue
 		}
 		newUsage = Add(newUsage, stats.Used)
+		qosResourceUsage.Pod = SumQOSResources(qosResourceUsage.Pod, stats.QOSResources.Pod)
+		qosResourceUsage.Container = SumQOSResources(qosResourceUsage.Container, stats.QOSResources.Container)
 	}
 
 	// mask the observed usage to only the set of resources tracked by this quota
 	// merge our observed usage with the quota usage status
 	// if the new usage is different than the last usage, we will need to do an update
 	newUsage = Mask(newUsage, matchedResources)
-	return newUsage, utilerrors.NewAggregate(errors)
+	return newUsage, qosResourceUsage, utilerrors.NewAggregate(errors)
 }

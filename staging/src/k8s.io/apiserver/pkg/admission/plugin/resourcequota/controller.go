@@ -524,8 +524,15 @@ func CheckRequest(quotas []corev1.ResourceQuota, a admission.Attributes, evaluat
 
 	// ignore items in deltaUsage with zero usage
 	deltaUsage = quota.RemoveZeros(deltaUsage)
+
+	// Calculate usage of QoS resources of the object
+	qosResourceUsage, err := evaluator.QOSResourceUsage(inputObject)
+	if err != nil {
+		return quotas, err
+	}
+
 	// if there is no remaining non-zero usage, short-circuit and return
-	if len(deltaUsage) == 0 {
+	if len(deltaUsage) == 0 && len(qosResourceUsage.Pod) == 0 && len(qosResourceUsage.Container) == 0 {
 		return quotas, nil
 	}
 
@@ -581,13 +588,63 @@ func CheckRequest(quotas []corev1.ResourceQuota, a admission.Attributes, evaluat
 		outQuotas[index].Status.Used = newUsage
 
 		// Check QoS resources
-		if err := evaluator.EvaluateQOSResources(resourceQuota.Status.QOSResources, inputObject); err != nil {
-			return nil, admission.NewForbidden(a,
-				fmt.Errorf("disallowed QoS resources in quota: %s: %w", resourceQuota.Name, err))
+		newQOSResourceUsage, err := checkQOSResources(qosResourceUsage.Pod, outQuotas[index].Status.QOSResourcesUsage.Pod, resourceQuota.Status.QOSResources.Pod)
+		if err != nil {
+			return nil, admission.NewForbidden(a, fmt.Errorf("pod-level QoS resources quota check failed: %w", err))
 		}
+		outQuotas[index].Status.QOSResourcesUsage.Pod = newQOSResourceUsage
+
+		newQOSResourceUsage, err = checkQOSResources(qosResourceUsage.Container, outQuotas[index].Status.QOSResourcesUsage.Container, resourceQuota.Status.QOSResources.Container)
+		if err != nil {
+			return nil, admission.NewForbidden(a, fmt.Errorf("container QoS resources quota check failed: %w", err))
+		}
+		outQuotas[index].Status.QOSResourcesUsage.Container = newQOSResourceUsage
 	}
 
 	return outQuotas, nil
+}
+
+func checkQOSResources(requested, used, limited []corev1.AllowedQOSResource) ([]corev1.AllowedQOSResource, error) {
+	newUsed := quota.SumQOSResources(used, requested)
+
+	denied := []string{}
+	exceeded := struct {
+		requested []string
+		used      []string
+		limited   []string
+	}{}
+
+	for _, res := range requested {
+		for _, cls := range res.Classes {
+			usage, _ := quota.GetQOSResourceCapacity(newUsed, res.Name, cls.Name)
+			limit, found := quota.GetQOSResourceCapacity(limited, res.Name, cls.Name)
+
+			if !found {
+				// If the resource type of class name was not listed it's not allowed
+				denied = append(denied, fmt.Sprintf("%s/%s", res.Name, cls.Name))
+			} else if limit > 0 && usage > limit {
+				exceeded.requested = append(exceeded.requested, fmt.Sprintf("%s/%s=%d", res.Name, cls.Name, cls.Capacity))
+				exceeded.limited = append(exceeded.limited, fmt.Sprintf("%s/%s=%d", res.Name, cls.Name, limit))
+
+				oldUsage, _ := quota.GetQOSResourceCapacity(used, res.Name, cls.Name)
+				exceeded.used = append(exceeded.used, fmt.Sprintf("%s/%s=%d", res.Name, cls.Name, oldUsage))
+			}
+		}
+	}
+
+	msgs := []string{}
+	if len(denied) > 0 {
+		msgs = append(msgs, fmt.Sprintf("disallowed: %s", strings.Join(denied, ",")))
+	}
+	if len(exceeded.requested) > 0 {
+		msgs = append(msgs, fmt.Sprintf("exceeded quota, requested: %s, used: %s, limited, %s",
+			strings.Join(exceeded.requested, ","), strings.Join(exceeded.used, ","), strings.Join(exceeded.limited, ",")))
+	}
+
+	if len(msgs) > 0 {
+		return newUsed, fmt.Errorf("%s", strings.Join(msgs, " "))
+	}
+	return newUsed, nil
 }
 
 func getScopeSelectorsFromQuota(quota corev1.ResourceQuota) []corev1.ScopedResourceSelectorRequirement {

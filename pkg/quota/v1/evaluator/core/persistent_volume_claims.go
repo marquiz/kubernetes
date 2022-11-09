@@ -102,8 +102,11 @@ func (p *pvcEvaluator) Handles(a admission.Attributes) bool {
 
 // Matches returns true if the evaluator matches the specified quota with the provided input item
 func (p *pvcEvaluator) Matches(resourceQuota *corev1.ResourceQuota, item runtime.Object) (bool, error) {
-	return generic.Matches(resourceQuota, item, p.MatchingResources, false, generic.MatchesNoScopeFunc)
+	return generic.Matches(resourceQuota, item, p.MatchingResources, p.MatchQOSResources, generic.MatchesNoScopeFunc)
 }
+
+// MatchQOSResources takes a QoS resource quota and return true if the evaluator matches (i.e. handles) them
+func (p *pvcEvaluator) MatchQOSResources(input corev1.QOSResourceQuota) bool { return false }
 
 // MatchingScopes takes the input specified list of scopes and input object. Returns the set of scopes resource matches.
 func (p *pvcEvaluator) MatchingScopes(item runtime.Object, scopes []corev1.ScopedResourceSelectorRequirement) ([]corev1.ScopedResourceSelectorRequirement, error) {
@@ -205,12 +208,12 @@ func (p *pvcEvaluator) getStorageUsage(pvc *corev1.PersistentVolumeClaim) *resou
 
 // UsageStats calculates aggregate usage for the object.
 func (p *pvcEvaluator) UsageStats(options quota.UsageStatsOptions) (quota.UsageStats, error) {
-	return generic.CalculateUsageStats(options, p.listFuncByNamespace, generic.MatchesNoScopeFunc, p.Usage)
+	return generic.CalculateUsageStats(options, p.listFuncByNamespace, generic.MatchesNoScopeFunc, p.Usage, p.QOSResourceUsage)
 }
 
-// EvaluateQOSResources evaluates the requested QoS resources against quota
-func (p *pvcEvaluator) EvaluateQOSResources(corev1.QOSResourceQuota, runtime.Object) error {
-	return nil
+// QOSResourceUsage evaluates the requested QoS resources against quota
+func (o *pvcEvaluator) QOSResourceUsage(item runtime.Object) (corev1.QOSResourceQuota, error) {
+	return corev1.QOSResourceQuota{}, nil
 }
 
 // ensure we implement required interface

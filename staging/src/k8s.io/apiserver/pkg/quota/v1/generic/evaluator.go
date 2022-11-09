@@ -139,8 +139,14 @@ type MatchesScopeFunc func(scope corev1.ScopedResourceSelectorRequirement, objec
 // UsageFunc knows how to measure usage associated with an object
 type UsageFunc func(object runtime.Object) (corev1.ResourceList, error)
 
+// QOSResourceUsageFunc knows how to measure QoS resource usage associated with an object
+type QOSResourceUsageFunc func(object runtime.Object) (corev1.QOSResourceQuota, error)
+
 // MatchingResourceNamesFunc is a function that returns the list of resources matched
 type MatchingResourceNamesFunc func(input []corev1.ResourceName) []corev1.ResourceName
+
+// MatchQOSResourcesFunc is a function that returns true if QoS resources match
+type MatchQOSResourcesFunc func(corev1.QOSResourceQuota) bool
 
 // MatchesNoScopeFunc returns false on all match checks
 func MatchesNoScopeFunc(scope corev1.ScopedResourceSelectorRequirement, object runtime.Object) (bool, error) {
@@ -150,16 +156,15 @@ func MatchesNoScopeFunc(scope corev1.ScopedResourceSelectorRequirement, object r
 // Matches returns true if the quota matches the specified item.
 func Matches(
 	resourceQuota *corev1.ResourceQuota, item runtime.Object,
-	matchFunc MatchingResourceNamesFunc, matchQOSResources bool,
+	matchFunc MatchingResourceNamesFunc, matchQOSResourcesFunc MatchQOSResourcesFunc,
 	scopeFunc MatchesScopeFunc) (bool, error) {
 	if resourceQuota == nil {
 		return false, fmt.Errorf("expected non-nil quota")
 	}
 	// verify the quota matches on at least one resource
 	matchResource := len(matchFunc(quota.ResourceNames(resourceQuota.Status.Hard))) > 0
-	matchQOSResources = matchQOSResources &&
-		(len(resourceQuota.Status.QOSResources.Pod) > 0 ||
-			len(resourceQuota.Status.QOSResources.Container) > 0)
+	matchQOSResources := matchQOSResourcesFunc(resourceQuota.Status.QOSResources)
+
 	// by default, no scopes matches all
 	matchScope := true
 	for _, scope := range getScopeSelectorsFromQuota(resourceQuota) {
@@ -189,7 +194,8 @@ func getScopeSelectorsFromQuota(quota *corev1.ResourceQuota) []corev1.ScopedReso
 func CalculateUsageStats(options quota.UsageStatsOptions,
 	listFunc ListFuncByNamespace,
 	scopeFunc MatchesScopeFunc,
-	usageFunc UsageFunc) (quota.UsageStats, error) {
+	usageFunc UsageFunc,
+	qosResourceUsageFunc QOSResourceUsageFunc) (quota.UsageStats, error) {
 	// default each tracked resource to zero
 	result := quota.UsageStats{Used: corev1.ResourceList{}}
 	for _, resourceName := range options.Resources {
@@ -227,6 +233,12 @@ func CalculateUsageStats(options quota.UsageStatsOptions,
 				return result, err
 			}
 			result.Used = quota.Add(result.Used, usage)
+
+			qosResourceUsage, err := qosResourceUsageFunc(item)
+			if err != nil {
+				return result, err
+			}
+			result.QOSResources = qosResourceUsage
 		}
 	}
 	return result, nil
@@ -260,12 +272,17 @@ func (o *objectCountEvaluator) Handles(a admission.Attributes) bool {
 
 // Matches returns true if the evaluator matches the specified quota with the provided input item
 func (o *objectCountEvaluator) Matches(resourceQuota *corev1.ResourceQuota, item runtime.Object) (bool, error) {
-	return Matches(resourceQuota, item, o.MatchingResources, false, MatchesNoScopeFunc)
+	return Matches(resourceQuota, item, o.MatchingResources, o.MatchQOSResources, MatchesNoScopeFunc)
 }
 
 // MatchingResources takes the input specified list of resources and returns the set of resources it matches.
 func (o *objectCountEvaluator) MatchingResources(input []corev1.ResourceName) []corev1.ResourceName {
 	return quota.Intersection(input, o.resourceNames)
+}
+
+// MatchQOSResources takes a QoS resource quota and return true if the evaluator matches (i.e. handles) them
+func (p *objectCountEvaluator) MatchQOSResources(input corev1.QOSResourceQuota) bool {
+	return false
 }
 
 // MatchingScopes takes the input specified list of scopes and input object. Returns the set of scopes resource matches.
@@ -296,12 +313,12 @@ func (o *objectCountEvaluator) GroupResource() schema.GroupResource {
 
 // UsageStats calculates aggregate usage for the object.
 func (o *objectCountEvaluator) UsageStats(options quota.UsageStatsOptions) (quota.UsageStats, error) {
-	return CalculateUsageStats(options, o.listFuncByNamespace, MatchesNoScopeFunc, o.Usage)
+	return CalculateUsageStats(options, o.listFuncByNamespace, MatchesNoScopeFunc, o.Usage, o.QOSResourceUsage)
 }
 
-// EvaluateQOSResources evaluates the requested QoS resources against quota
-func (o *objectCountEvaluator) EvaluateQOSResources(corev1.QOSResourceQuota, runtime.Object) error {
-	return nil
+// QOSResourceUsage evaluates the requested QoS resources against quota
+func (o *objectCountEvaluator) QOSResourceUsage(item runtime.Object) (corev1.QOSResourceQuota, error) {
+	return corev1.QOSResourceQuota{}, nil
 }
 
 // Verify implementation of interface at compile time.

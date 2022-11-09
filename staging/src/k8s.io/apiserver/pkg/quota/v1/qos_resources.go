@@ -51,17 +51,112 @@ func qosResourceListEquals(a, b []corev1.AllowedQOSResource) bool {
 	return true
 }
 
-// PodQOSResourcesDenied checks if the requested Pod QoS resources are allowed,
-// returning details about denied QoS resources.
-func PodQOSResourcesDenied(requests []corev1.PodQOSResourceRequest, limits []corev1.AllowedQOSResource) map[corev1.QOSResourceName]string {
-	denied := map[corev1.QOSResourceName]string{}
+// SumQOSResources sums two QoS resource quotas together
+func SumQOSResources(a, b []corev1.AllowedQOSResource) []corev1.AllowedQOSResource {
+	out := make([]corev1.AllowedQOSResource, len(a))
+	for i := range a {
+		out[i] = *a[i].DeepCopy()
+	}
 
-	for _, req := range requests {
-		if !QOSResourceAllowed(req.Name, req.Class, limits) {
-			denied[req.Name] = req.Class
+	for _, res := range b {
+		for _, cls := range res.Classes {
+			AddQOSResource(&out, res.Name, cls.Name, cls.Capacity)
 		}
 	}
-	return denied
+	return out
+}
+
+// MaskQOSResources masks out from A QoS resources that don't exist in B
+func MaskQOSResources(a, b []corev1.AllowedQOSResource) []corev1.AllowedQOSResource {
+	out := []corev1.AllowedQOSResource{}
+
+	for _, res := range a {
+		for _, cls := range res.Classes {
+			_, found := GetQOSResourceCapacity(b, res.Name, cls.Name)
+			if found {
+				AddQOSResource(&out, res.Name, cls.Name, cls.Capacity)
+			}
+		}
+	}
+	return out
+}
+
+// AddPodQOSResources adds Pod QoS resources to a quota object.
+func AddPodQOSResources(quota *[]corev1.AllowedQOSResource, requests []corev1.PodQOSResourceRequest) {
+	for _, req := range requests {
+		AddQOSResource(quota, req.Name, req.Class, 1)
+	}
+}
+
+// AddContainerQOSResources adds Container QoS resources to a quota object.
+func AddContainerQOSResources(quota *[]corev1.AllowedQOSResource, requests []corev1.QOSResourceRequest) {
+	for _, req := range requests {
+		AddQOSResource(quota, req.Name, req.Class, 1)
+	}
+}
+
+// AddPodQOSResource adds an amount of one QoS resources/class to a quota object.
+func AddQOSResource(quota *[]corev1.AllowedQOSResource, name corev1.QOSResourceName, class string, amount int64) {
+	for i, quotaRes := range *quota {
+		if name == quotaRes.Name {
+			AddQOSResourceClass(&(*quota)[i].Classes, class, amount)
+			return
+		}
+	}
+	newItem := corev1.AllowedQOSResource{
+		Name: name,
+		Classes: []corev1.AllowedQOSResourceClass{
+			{Name: class, Capacity: amount}}}
+
+	*quota = append(*quota, newItem)
+}
+
+func AddQOSResourceClass(quota *[]corev1.AllowedQOSResourceClass, request string, amount int64) {
+	for i, quotaClass := range *quota {
+		if request == quotaClass.Name {
+			quotaClass.Capacity += amount
+			(*quota)[i] = quotaClass
+			return
+		}
+	}
+	*quota = append(*quota, corev1.AllowedQOSResourceClass{Name: request, Capacity: amount})
+}
+
+func MaxContainerQOSResources(quota *[]corev1.AllowedQOSResource, requests []corev1.QOSResourceRequest) {
+	for _, req := range requests {
+		MaxQOSResource(quota, req.Name, req.Class)
+	}
+}
+
+func MaxQOSResource(quota *[]corev1.AllowedQOSResource, name corev1.QOSResourceName, class string) {
+	for i, quotaRes := range *quota {
+		if name == quotaRes.Name {
+			for j, quotaClass := range quotaRes.Classes {
+				if class == quotaClass.Name {
+					if quotaClass.Capacity < 1 {
+						(*quota)[i].Classes[j].Capacity = 1
+					}
+					return
+				}
+			}
+		}
+	}
+	// Was not found -> add it (capacity will be set to 1)
+	AddQOSResource(quota, name, class, 1)
+}
+
+func GetQOSResourceCapacity(quota []corev1.AllowedQOSResource, resName corev1.QOSResourceName, className string) (int64, bool) {
+	for _, res := range quota {
+		if resName == res.Name {
+			for _, cls := range res.Classes {
+				if className == cls.Name {
+					return cls.Capacity, true
+				}
+			}
+		}
+	}
+	// Not found
+	return 0, false
 }
 
 // ContainerQOSResourcesDenied checks if the requested Container QoS resources
@@ -70,15 +165,15 @@ func ContainerQOSResourcesDenied(requests []corev1.QOSResourceRequest, limits []
 	denied := map[corev1.QOSResourceName]string{}
 
 	for _, req := range requests {
-		if !QOSResourceAllowed(req.Name, req.Class, limits) {
+		if !IsQOSResourceAllowed(req.Name, req.Class, limits) {
 			denied[req.Name] = req.Class
 		}
 	}
 	return denied
 }
 
-// QOSResourceAllowed returns if QoS resource assignment is allowed.
-func QOSResourceAllowed(name corev1.QOSResourceName, class string, limits []corev1.AllowedQOSResource) bool {
+// IsQOSResourceAllowed returns if QoS resource assignment is allowed.
+func IsQOSResourceAllowed(name corev1.QOSResourceName, class string, limits []corev1.AllowedQOSResource) bool {
 	for _, limitedRes := range limits {
 		if name == limitedRes.Name {
 			if !allowedClassesContain(limitedRes.Classes, class) {
