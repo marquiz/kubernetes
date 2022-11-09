@@ -160,7 +160,7 @@ func (p *podEvaluator) Handles(a admission.Attributes) bool {
 
 // Matches returns true if the evaluator matches the specified quota with the provided input item
 func (p *podEvaluator) Matches(resourceQuota *corev1.ResourceQuota, item runtime.Object) (bool, error) {
-	return generic.Matches(resourceQuota, item, p.MatchingResources, true, podMatchesScopeFunc)
+	return generic.Matches(resourceQuota, item, p.MatchingResources, p.MatchQoSResources, podMatchesScopeFunc)
 }
 
 // MatchingResources takes the input specified list of resources and returns the set of resources it matches.
@@ -178,6 +178,11 @@ func (p *podEvaluator) MatchingResources(input []corev1.ResourceName) []corev1.R
 	}
 
 	return result
+}
+
+// MatchQoSResources takes a QoS resource quota and return true if the evaluator matches (i.e. handles) them
+func (p *podEvaluator) MatchQoSResources(input corev1.QoSResourceQuota) bool {
+	return len(input.Pod) > 0 || len(input.Container) > 0
 }
 
 // MatchingScopes takes the input specified list of scopes and pod object. Returns the set of scope selectors pod matches.
@@ -223,52 +228,28 @@ func (p *podEvaluator) Usage(item runtime.Object) (corev1.ResourceList, error) {
 
 // UsageStats calculates aggregate usage for the object.
 func (p *podEvaluator) UsageStats(options quota.UsageStatsOptions) (quota.UsageStats, error) {
-	return generic.CalculateUsageStats(options, p.listFuncByNamespace, podMatchesScopeFunc, p.Usage)
+	return generic.CalculateUsageStats(options, p.listFuncByNamespace, podMatchesScopeFunc, p.Usage, p.QoSResourceUsage)
 }
 
-// EvaluateQoSResources evaluates the requested QoS resources against quota
-func (p *podEvaluator) EvaluateQoSResources(input corev1.QoSResourceQuota, item runtime.Object) error {
+// QoSResourceUsage calculates the usage of QoS resources of an object
+func (p *podEvaluator) QoSResourceUsage(item runtime.Object) (corev1.QoSResourceQuota, error) {
+	usage := corev1.QoSResourceQuota{}
+
 	pod, err := toExternalPodOrError(item)
 	if err != nil {
-		return err
+		return usage, err
 	}
 
-	messages := []string{}
+	quota.AddQoSResources(&usage.Pod, pod.Spec.Resources.QoSResources)
 
-	toStr := func(crs map[corev1.QoSResourceName]string) string {
-		r := make([]string, 0, len(crs))
-		for k, v := range crs {
-			r = append(r, string(k)+"="+v)
-		}
-		return strings.Join(r, ",")
-	}
-
-	// Use maps to eliminate duplicates
-	if denied := quota.QoSResourcesDenied(pod.Spec.Resources.QoSResources, input.Pod); len(denied) > 0 {
-		messages = append(messages,
-			fmt.Sprintf("%s for pod-level resources", toStr(denied)))
-	}
-
-	for i := range pod.Spec.InitContainers {
-		if denied := quota.QoSResourcesDenied(pod.Spec.InitContainers[i].Resources.QoSResources, input.Container); len(denied) > 0 {
-			messages = append(messages,
-				fmt.Sprintf("%s for init container %s",
-					toStr(denied), pod.Spec.InitContainers[i].Name))
-		}
-	}
 	for i := range pod.Spec.Containers {
-		if denied := quota.QoSResourcesDenied(pod.Spec.Containers[i].Resources.QoSResources, input.Container); len(denied) > 0 {
-			messages = append(messages,
-				fmt.Sprintf("%s for container %s",
-					toStr(denied), pod.Spec.Containers[i].Name))
-		}
+		quota.AddQoSResources(&usage.Container, pod.Spec.Containers[i].Resources.QoSResources)
+	}
+	for i := range pod.Spec.InitContainers {
+		quota.MaxQoSResources(&usage.Container, pod.Spec.InitContainers[i].Resources.QoSResources)
 	}
 
-	if len(messages) > 0 {
-		return fmt.Errorf(strings.Join(messages, "; "))
-	}
-
-	return nil
+	return usage, nil
 }
 
 // verifies we implement the required interface.

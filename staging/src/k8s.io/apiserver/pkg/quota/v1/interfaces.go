@@ -39,6 +39,8 @@ type UsageStatsOptions struct {
 type UsageStats struct {
 	// Used maps resource to quantity used
 	Used corev1.ResourceList
+	// QoSResources contains the usage stats of QoS resources
+	QoSResources corev1.QoSResourceQuota
 }
 
 // Evaluator knows how to evaluate quota usage for a particular group resource
@@ -58,12 +60,14 @@ type Evaluator interface {
 	UncoveredQuotaScopes(limitedScopes []corev1.ScopedResourceSelectorRequirement, matchedQuotaScopes []corev1.ScopedResourceSelectorRequirement) ([]corev1.ScopedResourceSelectorRequirement, error)
 	// MatchingResources takes the input specified list of resources and returns the set of resources evaluator matches.
 	MatchingResources(input []corev1.ResourceName) []corev1.ResourceName
+	// MatchQoSResources takes a QoS resource quota and return true if the evaluator matches (i.e. handles) them
+	MatchQoSResources(input corev1.QoSResourceQuota) bool
 	// Usage returns the resource usage for the specified object
 	Usage(item runtime.Object) (corev1.ResourceList, error)
 	// UsageStats calculates latest observed usage stats for all objects
 	UsageStats(options UsageStatsOptions) (UsageStats, error)
-	// EvaluateQoSResources evaluates the requested QoS resources against quota
-	EvaluateQoSResources(input corev1.QoSResourceQuota, item runtime.Object) error
+	// QoSResourceUsage evaluates the requested QoS resources against quota
+	QoSResourceUsage(item runtime.Object) (corev1.QoSResourceQuota, error)
 }
 
 // Configuration defines how the quota system is configured.
