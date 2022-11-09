@@ -227,10 +227,39 @@ func (rq *Controller) addQuota(obj interface{}) {
 		if _, usageFound := resourceQuota.Status.Used[constraint]; !usageFound {
 			matchedResources := []v1.ResourceName{constraint}
 			for _, evaluator := range rq.registry.List() {
-				if intersection := evaluator.MatchingResources(matchedResources); len(intersection) > 0 {
+				intersection := evaluator.MatchingResources(matchedResources)
+				if len(intersection) > 0 || evaluator.MatchQoSResources(resourceQuota.Status.QoSResources) {
 					rq.missingUsageQueue.Add(key)
 					return
 				}
+			}
+		}
+	}
+
+	// Check QoS resource constraints for missing usage
+	qosResourceUsageMissing := func(constraint, usage []v1.AllowedQoSResource) bool {
+		for _, res := range constraint {
+			for _, cls := range res.Classes {
+				if _, found := quota.GetQoSResourceCapacity(usage, res.Name, cls.Name); !found {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	if qosResourceUsageMissing(resourceQuota.Status.QoSResources.Pod, resourceQuota.Status.QoSResourcesUsage.Pod) ||
+		qosResourceUsageMissing(resourceQuota.Status.QoSResources.Container, resourceQuota.Status.QoSResourcesUsage.Container) {
+
+		for _, evaluator := range rq.registry.List() {
+			// NOTE: we rely on the fact the QoS resources are only handled
+			// by the pod evaluator and the matcher function does not look at
+			// the QoS resource names or class names. I.e. the matcher
+			// returns true if there were any QoS resources specified in the
+			// quota. Thus we don't need to check for specific resource/class
+			// pair that was actually missing the usage stats.
+			if evaluator.MatchQoSResources(resourceQuota.Status.QoSResources) {
+				rq.missingUsageQueue.Add(key)
+				return
 			}
 		}
 	}
@@ -343,7 +372,7 @@ func (rq *Controller) syncResourceQuota(ctx context.Context, resourceQuota *v1.R
 
 	var errs []error
 
-	newUsage, err := quota.CalculateUsage(resourceQuota.Namespace, resourceQuota.Spec.Scopes, hardLimits, rq.registry, resourceQuota.Spec.ScopeSelector)
+	newUsage, qosResourceUsage, err := quota.CalculateUsage(resourceQuota.Namespace, resourceQuota.Spec.Scopes, hardLimits, rq.registry, resourceQuota.Spec.ScopeSelector)
 	if err != nil {
 		// if err is non-nil, remember it to return, but continue updating status with any resources in newUsage
 		errs = append(errs, err)
@@ -356,19 +385,25 @@ func (rq *Controller) syncResourceQuota(ctx context.Context, resourceQuota *v1.R
 	hardResources := quota.ResourceNames(hardLimits)
 	used = quota.Mask(used, hardResources)
 
-	// Copy QoS resources as is, we don't track the actual usage stats
-	qosResources := resourceQuota.Spec.QoSResources.DeepCopy()
+	// Handle QoS resources
+	qosResourceLimits := *resourceQuota.Spec.QoSResources.DeepCopy()
+	usedQoSResources := v1.QoSResourceQuota{
+		Pod:       quota.MaskQoSResources(qosResourceUsage.Pod, qosResourceLimits.Pod),
+		Container: quota.MaskQoSResources(qosResourceUsage.Container, qosResourceLimits.Container),
+	}
 
 	// Create a usage object that is based on the quota resource version that will handle updates
 	// by default, we preserve the past usage observation, and set hard to the current spec
 	usage := resourceQuota.DeepCopy()
 	usage.Status = v1.ResourceQuotaStatus{
-		Hard:         hardLimits,
-		Used:         used,
-		QoSResources: *qosResources,
+		Hard:              hardLimits,
+		Used:              used,
+		QoSResources:      qosResourceLimits,
+		QoSResourcesUsage: usedQoSResources,
 	}
 
-	dirty = dirty || !quota.Equals(usage.Status.Used, resourceQuota.Status.Used)
+	dirty = dirty || !quota.Equals(usage.Status.Used, resourceQuota.Status.Used) ||
+		!quota.QoSResourceEquals(usage.Status.QoSResourcesUsage, resourceQuota.Status.QoSResourcesUsage)
 
 	// there was a change observed by this controller that requires we update quota
 	if dirty {
@@ -406,7 +441,8 @@ func (rq *Controller) replenishQuota(groupResource schema.GroupResource, namespa
 	for i := range resourceQuotas {
 		resourceQuota := resourceQuotas[i]
 		resourceQuotaResources := quota.ResourceNames(resourceQuota.Status.Hard)
-		if intersection := evaluator.MatchingResources(resourceQuotaResources); len(intersection) > 0 {
+		intersection := evaluator.MatchingResources(resourceQuotaResources)
+		if len(intersection) > 0 || evaluator.MatchQoSResources(resourceQuota.Status.QoSResources) {
 			// TODO: make this support targeted replenishment to a specific kind, right now it does a full recalc on that quota.
 			rq.enqueueResourceQuota(resourceQuota)
 		}
