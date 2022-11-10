@@ -221,7 +221,7 @@ func toKubeRuntimeStatus(status *runtimeapi.RuntimeStatus) *kubecontainer.Runtim
 			for i, r := range in {
 				classes := make([]v1.QoSResourceClassInfo, len(r.Classes))
 				for j, c := range r.Classes {
-					classes[j] = v1.QoSResourceClassInfo{Name: c.Name}
+					classes[j] = v1.QoSResourceClassInfo{Name: c.Name, Capacity: int64(c.Capacity)}
 				}
 
 				out[i] = v1.QoSResourceInfo{
