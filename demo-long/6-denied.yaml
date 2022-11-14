@@ -6,7 +6,6 @@ spec:
   resources:
     qosResources:
       podres-1: qos-c
-      podres-2: cls-1
   containers:
   - name: cnt-1
     image: k8s.gcr.io/pause
@@ -15,5 +14,4 @@ spec:
         rdt: gold
         blockio: low-prio
         dummy-1: class-a
-        dummy-2: platinum
 

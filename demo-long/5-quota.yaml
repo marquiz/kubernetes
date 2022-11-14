@@ -7,18 +7,21 @@ spec:
     pod:
       - name: podres-1
         classes:
-          - qos-a
-          - qos-b
+          - name: qos-b
+          - name: qos-c
+            capacity: 1
     container:
       - name: rdt
         classes:
-          - bronze
+          - name: bronze
+            capacity: 2
       - name: blockio
         classes:
-          - normal
-          - low-prio
+          - name: normal
+          - name: low-prio
       - name: dummy-1
         classes:
-          - class-b
-          - class-c
-          - class-d
+          - name: class-b
+          - name: class-c
+          - name: class-d
+            capacity: 1
