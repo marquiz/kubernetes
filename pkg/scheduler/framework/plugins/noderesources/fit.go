@@ -207,7 +207,11 @@ func NewFit(_ context.Context, plArgs runtime.Object, h framework.Handle, fts fe
 func computePodResourceRequest(pod *v1.Pod) *preFilterState {
 	// pod hasn't scheduled yet so we don't need to worry about InPlacePodVerticalScalingEnabled
 	reqs := resource.PodRequests(pod, resource.PodResourcesOptions{})
-	result := &preFilterState{}
+	podQOSReqs, containerQOSReqs := resource.PodQOSResourceRequests(pod)
+	result := &preFilterState{Resource: framework.Resource{
+		PodQOSResources:       podQOSReqs,
+		ContainerQOSResources: containerQOSReqs},
+	}
 	result.SetMaxResource(reqs)
 	return result
 }
@@ -432,6 +436,11 @@ func fitsRequest(podRequest *preFilterState, nodeInfo *framework.NodeInfo, ignor
 		})
 	}
 
+	insufficientResources = append(insufficientResources,
+		fitQOSResourceRequest("pod", podRequest.PodQOSResources, nodeInfo.Requested.PodQOSResources, nodeInfo.Allocatable.PodQOSResources)...)
+	insufficientResources = append(insufficientResources,
+		fitQOSResourceRequest("container", podRequest.ContainerQOSResources, nodeInfo.Requested.ContainerQOSResources, nodeInfo.Allocatable.ContainerQOSResources)...)
+
 	if podRequest.MilliCPU == 0 &&
 		podRequest.Memory == 0 &&
 		podRequest.EphemeralStorage == 0 &&
@@ -498,6 +507,48 @@ func fitsRequest(podRequest *preFilterState, nodeInfo *framework.NodeInfo, ignor
 	}
 
 	return insufficientResources
+}
+
+func fitQOSResourceRequest(typ string, requested, allocated, available resource.QOSResourcesTotal) []InsufficientResource {
+	out := []InsufficientResource{}
+
+	for rName, rClasses := range requested {
+		if _, ok := available[rName]; !ok {
+			out = append(out, InsufficientResource{
+				ResourceName: v1.ResourceName(rName),
+				Reason:       fmt.Sprintf("Unavailable %s QoS resource type %q", typ, rName),
+				Requested:    1,
+				Used:         0,
+				Capacity:     0,
+			})
+		} else {
+			for rClass, rAmount := range rClasses {
+				clsAvailable, clsCapacity := available.GetAmount(rName, rClass)
+				if !clsAvailable {
+					out = append(out, InsufficientResource{
+						ResourceName: v1.ResourceName(rName),
+						Reason:       fmt.Sprintf("Unavailable class %q of %s QoS resource %q", rClass, typ, rName),
+						Requested:    1,
+						Used:         0,
+						Capacity:     0,
+					})
+				} else if clsCapacity > 0 {
+					// Zero capacity has a special meaning of "infinite" so we skip the check in that case
+					_, usage := allocated.GetAmount(rName, rClass)
+					if usage+rAmount > clsCapacity {
+						out = append(out, InsufficientResource{
+							ResourceName: v1.ResourceName(rName),
+							Reason:       fmt.Sprintf("Insufficient class %q of %s QoS resource %q", rClass, typ, rName),
+							Requested:    rAmount,
+							Used:         usage,
+							Capacity:     clsCapacity,
+						})
+					}
+				}
+			}
+		}
+	}
+	return out
 }
 
 // Score invoked at the Score extension point.
