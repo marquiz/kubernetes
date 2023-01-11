@@ -438,12 +438,21 @@ type Resource struct {
 	AllowedPodNumber int
 	// ScalarResources
 	ScalarResources map[v1.ResourceName]int64
+	// PodQoSResources holds the available QoS resources for pods.
+	PodQoSResources QoSResources
+	// ContainerQoSResources holds the available QoS resources for containers.
+	ContainerQoSResources QoSResources
 }
 
-// NewResource creates a Resource from ResourceList
-func NewResource(rl v1.ResourceList) *Resource {
+type QoSResources map[v1.QoSResourceName]QoSResourceClasses
+
+type QoSResourceClasses map[string]struct{}
+
+// NewResource creates a Resource
+func NewResource(rl v1.ResourceList, crl v1.QoSResourceStatus) *Resource {
 	r := &Resource{}
 	r.Add(rl)
+	r.SetQoSResources(crl)
 	return r
 }
 
@@ -471,6 +480,83 @@ func (r *Resource) Add(rl v1.ResourceList) {
 	}
 }
 
+func (r *Resource) SetQoSResources(crl v1.QoSResourceStatus) {
+	if r == nil {
+		return
+	}
+
+	// Conversion func from node status into our internal representation
+	convert := func(in []v1.QoSResourceInfo) QoSResources {
+		out := make(QoSResources, len(in))
+		for _, cr := range in {
+			classes := make(QoSResourceClasses, len(cr.Classes))
+			for _, c := range cr.Classes {
+				classes[c.Name] = struct{}{}
+			}
+			out[cr.Name] = classes
+		}
+		return out
+	}
+
+	r.PodQoSResources = convert(crl.PodQoSResources)
+	r.ContainerQoSResources = convert(crl.ContainerQoSResources)
+}
+
+func (r *Resource) AddPodQoSResources(crl map[v1.QoSResourceName]string) {
+	if r == nil {
+		return
+	}
+
+	for name, class := range crl {
+		r.AddPodQoSResource(name, class)
+	}
+}
+
+func (r *Resource) AddContainerQoSResources(crl map[v1.QoSResourceName]string) {
+	if r == nil {
+		return
+	}
+
+	for name, class := range crl {
+		r.AddContainerQoSResource(name, class)
+	}
+}
+
+func (r *Resource) AddPodQoSResource(name v1.QoSResourceName, class string) {
+	if r.PodQoSResources == nil {
+		r.PodQoSResources = make(map[v1.QoSResourceName]QoSResourceClasses)
+	}
+	if r.PodQoSResources[name] == nil {
+		r.PodQoSResources[name] = make(QoSResourceClasses)
+	}
+	r.PodQoSResources[name][class] = struct{}{}
+}
+
+func (r *Resource) AddContainerQoSResource(name v1.QoSResourceName, class string) {
+	if r.ContainerQoSResources == nil {
+		r.ContainerQoSResources = make(map[v1.QoSResourceName]QoSResourceClasses)
+	}
+	if r.ContainerQoSResources[name] == nil {
+		r.ContainerQoSResources[name] = make(QoSResourceClasses)
+	}
+	r.ContainerQoSResources[name][class] = struct{}{}
+}
+
+func (r *QoSResources) clone() *QoSResources {
+	if r == nil {
+		return nil
+	}
+	out := make(QoSResources, len(*r))
+	for k, v := range *r {
+		classes := make(QoSResourceClasses, len(v))
+		for c := range v {
+			classes[c] = struct{}{}
+		}
+		out[k] = classes
+	}
+	return &out
+}
+
 // Clone returns a copy of this resource.
 func (r *Resource) Clone() *Resource {
 	res := &Resource{
@@ -485,6 +571,10 @@ func (r *Resource) Clone() *Resource {
 			res.ScalarResources[k] = v
 		}
 	}
+
+	res.PodQoSResources = *r.PodQoSResources.clone()
+	res.ContainerQoSResources = *r.ContainerQoSResources.clone()
+
 	return res
 }
 
@@ -790,7 +880,7 @@ func (n *NodeInfo) updatePVCRefCounts(pod *v1.Pod, add bool) {
 // SetNode sets the overall node information.
 func (n *NodeInfo) SetNode(node *v1.Node) {
 	n.node = node
-	n.Allocatable = NewResource(node.Status.Allocatable)
+	n.Allocatable = NewResource(node.Status.Allocatable, node.Status.QoSResources)
 	n.Generation = nextGeneration()
 }
 

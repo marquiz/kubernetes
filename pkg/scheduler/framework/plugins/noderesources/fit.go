@@ -159,13 +159,16 @@ func NewFit(plArgs runtime.Object, h framework.Handle, fts feature.Features) (fr
 // Result: CPU: 3, Memory: 3G
 func computePodResourceRequest(pod *v1.Pod) *preFilterState {
 	result := &preFilterState{}
+	result.AddPodQoSResources(pod.Spec.Resources.QoSResources)
 	for _, container := range pod.Spec.Containers {
 		result.Add(container.Resources.Requests)
+		result.AddContainerQoSResources(container.Resources.QoSResources)
 	}
 
 	// take max_resource(sum_pod, any_init_container)
 	for _, container := range pod.Spec.InitContainers {
 		result.SetMaxResource(container.Resources.Requests)
+		result.AddContainerQoSResources(container.Resources.QoSResources)
 	}
 
 	// If Overhead is being utilized, add to the total requests for the pod
@@ -250,6 +253,35 @@ func Fits(pod *v1.Pod, nodeInfo *framework.NodeInfo) []InsufficientResource {
 	return fitsRequest(computePodResourceRequest(pod), nodeInfo, nil, nil)
 }
 
+func fitQoSResourceRequest(typ string, requested, available framework.QoSResources) []InsufficientResource {
+	out := []InsufficientResource{}
+
+	for rName, rClasses := range requested {
+		if availableClasses, ok := available[rName]; !ok {
+			out = append(out, InsufficientResource{
+				ResourceName: v1.ResourceName(rName),
+				Reason:       fmt.Sprintf("Unavailable %s QoS resource type %q", typ, rName),
+				Requested:    1,
+				Used:         0,
+				Capacity:     0,
+			})
+		} else {
+			for class := range rClasses {
+				if _, ok := availableClasses[class]; !ok {
+					out = append(out, InsufficientResource{
+						ResourceName: v1.ResourceName(rName),
+						Reason:       fmt.Sprintf("Unavailable class %q of %s QoS resource %s", class, typ, rName),
+						Requested:    1,
+						Used:         0,
+						Capacity:     0,
+					})
+				}
+			}
+		}
+	}
+	return out
+}
+
 func fitsRequest(podRequest *preFilterState, nodeInfo *framework.NodeInfo, ignoredExtendedResources, ignoredResourceGroups sets.String) []InsufficientResource {
 	insufficientResources := make([]InsufficientResource, 0, 4)
 
@@ -263,6 +295,11 @@ func fitsRequest(podRequest *preFilterState, nodeInfo *framework.NodeInfo, ignor
 			Capacity:     int64(allowedPodNumber),
 		})
 	}
+
+	insufficientResources = append(insufficientResources,
+		fitQoSResourceRequest("pod", podRequest.PodQoSResources, nodeInfo.Allocatable.PodQoSResources)...)
+	insufficientResources = append(insufficientResources,
+		fitQoSResourceRequest("container", podRequest.ContainerQoSResources, nodeInfo.Allocatable.ContainerQoSResources)...)
 
 	if podRequest.MilliCPU == 0 &&
 		podRequest.Memory == 0 &&

@@ -55,6 +55,7 @@ func NewInTreeRegistry() runtime.Registry {
 		EnableMatchLabelKeysInPodTopologySpread:      feature.DefaultFeatureGate.Enabled(features.MatchLabelKeysInPodTopologySpread),
 		EnablePodSchedulingReadiness:                 feature.DefaultFeatureGate.Enabled(features.PodSchedulingReadiness),
 		EnablePodDisruptionConditions:                feature.DefaultFeatureGate.Enabled(features.PodDisruptionConditions),
+		EnableQoSResources:                           feature.DefaultFeatureGate.Enabled(features.QoSResources),
 	}
 
 	registry := runtime.Registry{
