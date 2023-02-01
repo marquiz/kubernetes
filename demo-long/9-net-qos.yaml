@@ -5,15 +5,10 @@ metadata:
 spec:
   qosResources:
   - name: net
-    class: normal
+    class: fast
   containers:
   - name: cnt-1
     image: k8s.gcr.io/pause
     resources:
       qosResources:
-      - name: rdt
-        class: gold
-      - name: blockio
-        class: low-prio
-      - name: dummy-1
-        class: class-a
+        rdt: gold

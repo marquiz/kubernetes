@@ -4,8 +4,8 @@ metadata:
   name: demo
 spec:
   qosResources:
-  - name: podres-1
-    class: qos-c
+  - name: net
+    class: normal
   containers:
   - name: cnt-1
     image: k8s.gcr.io/pause

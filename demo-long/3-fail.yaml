@@ -6,7 +6,7 @@ spec:
   qosResources:
   - name: podres-notexists
     class: cls-1
-  - name: podres-1
+  - name: net
     class: foo
   containers:
   - name: foo

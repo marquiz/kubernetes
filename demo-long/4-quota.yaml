@@ -5,10 +5,10 @@ metadata:
 spec:
   qosResources:
     pod:
-      - name: podres-1
+      - name: net
         classes:
-          - name: qos-b
-          - name: qos-c
+          - name: slow
+          - name: normal
             capacity: 1
     container:
       - name: rdt
