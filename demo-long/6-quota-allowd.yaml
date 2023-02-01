@@ -5,7 +5,7 @@ metadata:
 spec:
   resources:
     qosResources:
-      podres-1: qos-c
+      net: normal
   containers:
   - name: cnt-1
     image: k8s.gcr.io/pause

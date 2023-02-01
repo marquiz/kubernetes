@@ -5,16 +5,10 @@ metadata:
 spec:
   resources:
     qosResources:
-      podres-notexists: cls-1
-      net: foo
+      net: fast
   containers:
-  - name: foo
+  - name: cnt-1
     image: k8s.gcr.io/pause
     resources:
       qosResources:
-        rdt: foo
-        blockio: bar
-        dummy-2: gold
-        dummy-3: baz
-
-
+        rdt: gold
