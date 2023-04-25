@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: demo2
+  name: demo
 spec:
   qosResources:
   - name: net
@@ -9,13 +9,6 @@ spec:
 
   containers:
   - name: cnt-1
-    image: k8s.gcr.io/pause
-    resources:
-      qosResources:
-      - name: rdt
-        class: bronze
-
-  - name: cnt-2
     image: k8s.gcr.io/pause
     resources:
       qosResources:

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo2
+spec:
+  qosResources:
+  - name: net
+    class: normal
+
+  containers:
+  - name: cnt-1
+    image: k8s.gcr.io/pause
