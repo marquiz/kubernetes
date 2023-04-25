@@ -17,7 +17,5 @@ spec:
         class: foo
       - name: blockio
         class: bar
-      - name: dummy-2
-        class: gold
-      - name: dummy-3
+      - name: dummy-qos
         class: baz

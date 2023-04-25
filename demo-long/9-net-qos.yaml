@@ -9,6 +9,3 @@ spec:
   containers:
   - name: cnt-1
     image: k8s.gcr.io/pause
-    resources:
-      qosResources:
-        rdt: gold

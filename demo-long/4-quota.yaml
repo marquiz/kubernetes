@@ -19,9 +19,3 @@ spec:
         classes:
           - name: normal
           - name: low-prio
-      - name: dummy-1
-        classes:
-          - name: class-b
-          - name: class-c
-          - name: class-d
-            capacity: 1

@@ -10,8 +10,6 @@ spec:
       qosResources:
       - name: rdt
         class: bronze
-      - name: dummy-1
-        class: class-d
 
   - name: cnt-2
     image: k8s.gcr.io/pause

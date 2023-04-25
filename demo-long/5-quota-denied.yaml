@@ -15,5 +15,3 @@ spec:
         class: gold
       - name: blockio
         class: low-prio
-      - name: dummy-1
-        class: class-a
