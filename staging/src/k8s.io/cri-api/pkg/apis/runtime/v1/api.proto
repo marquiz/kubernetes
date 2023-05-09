@@ -1578,6 +1578,39 @@ message RuntimeCondition {
 message RuntimeStatus {
     // List of current observed runtime conditions.
     repeated RuntimeCondition conditions = 1;
+    // Information about the discovered resources
+    ResourcesInfo resources = 2;
+}
+
+// ResourcesInfo contains information about the resources discovered by the
+// runtime.
+message ResourcesInfo {
+    // Pod-level QoS resources available.
+    repeated QOSResourceInfo pod_qos_resources = 1 [(gogoproto.customname) = "PodQOSResources"];
+    // Container-level QoS resources available.
+    repeated QOSResourceInfo container_qos_resources = 2 [(gogoproto.customname) = "ContainerQOSResources"];
+}
+
+// QOSResourceInfo contains information about one type of QoS resource.
+message QOSResourceInfo {
+    // Name of the QoS resources.
+    string Name = 1;
+    // Mutable is set to true if this resource supports in-place updates i.e.
+    // the class of a running container or sandbox can be changed.
+    bool Mutable = 2;
+    // List of classes of this QoS resource.
+    repeated QOSResourceClassInfo classes = 3;
+}
+
+// QOSResourceClassInfo contains information about one class of certain
+// QoS resource.
+message QOSResourceClassInfo {
+    // Name of the class
+    string name = 1;
+    // Capacity is the number of maximum allowed simultaneous assignments into this class
+    // Zero means "infinite" capacity i.e. the usage is not restricted.
+    uint64 capacity = 2;
+
 }
 
 message StatusRequest {
