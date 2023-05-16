@@ -3093,6 +3093,31 @@ func validateStartupProbe(probe *core.Probe, gracePeriod int64, fldPath *field.P
 	return allErrs
 }
 
+func validatePodQOSResources(qosResources []core.PodQOSResourceRequest, fldPath *field.Path) field.ErrorList {
+	var allErrs field.ErrorList
+	qosResourceNames := sets.String{}
+	for _, res := range qosResources {
+		// Validate name of the QoS-resource
+		name := string(res.Name)
+		if name == "" {
+			allErrs = append(allErrs, field.Required(fldPath.Child("name"), ""))
+		} else if qosResourceNames.Has(name) {
+			allErrs = append(allErrs, field.Duplicate(fldPath.Child("name"), name))
+		} else if nameErrs := ValidateQualifiedName(name, fldPath.Child("name")); len(nameErrs) > 0 {
+			allErrs = append(allErrs, nameErrs...)
+		}
+		qosResourceNames.Insert(name)
+
+		// Validate name of the class
+		if res.Class == "" {
+			allErrs = append(allErrs, field.Required(fldPath.Child("class"), ""))
+		} else if classErrs := ValidateQualifiedName(res.Class, fldPath.Child("class")); len(classErrs) > 0 {
+			allErrs = append(allErrs, classErrs...)
+		}
+	}
+	return allErrs
+}
+
 func validateProbe(probe *core.Probe, gracePeriod int64, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
@@ -4174,6 +4199,7 @@ func ValidatePodSpec(spec *core.PodSpec, podMeta *metav1.ObjectMeta, fldPath *fi
 	allErrs = append(allErrs, vErrs...)
 	podClaimNames := gatherPodResourceClaimNames(spec.ResourceClaims)
 	allErrs = append(allErrs, validatePodResourceClaims(podMeta, spec.ResourceClaims, fldPath.Child("resourceClaims"))...)
+	allErrs = append(allErrs, validatePodQOSResources(spec.QOSResources, fldPath.Child("qosResources"))...)
 	allErrs = append(allErrs, validateContainers(spec.Containers, vols, podClaimNames, gracePeriod, fldPath.Child("containers"), opts, &spec.RestartPolicy, hostUsers)...)
 	allErrs = append(allErrs, validateInitContainers(spec.InitContainers, spec.Containers, vols, podClaimNames, gracePeriod, fldPath.Child("initContainers"), opts, &spec.RestartPolicy, hostUsers)...)
 	allErrs = append(allErrs, validateEphemeralContainers(spec.EphemeralContainers, spec.Containers, spec.InitContainers, vols, podClaimNames, fldPath.Child("ephemeralContainers"), opts, &spec.RestartPolicy, hostUsers)...)
@@ -6762,6 +6788,8 @@ func ValidateResourceRequirements(requirements *core.ResourceRequirements, podCl
 
 	allErrs = append(allErrs, validateResourceClaimNames(requirements.Claims, podClaimNames, fldPath.Child("claims"))...)
 
+	allErrs = append(allErrs, validateContainerQOSResources(requirements.QOSResources, fldPath.Child("qosResources"))...)
+
 	return allErrs
 }
 
@@ -6794,6 +6822,31 @@ func validateResourceClaimNames(claims []core.ResourceClaim, podClaimNames sets.
 				}
 				allErrs = append(allErrs, error)
 			}
+		}
+	}
+	return allErrs
+}
+
+func validateContainerQOSResources(qosResources []core.QOSResourceRequest, fldPath *field.Path) field.ErrorList {
+	var allErrs field.ErrorList
+	qosResourceNames := sets.String{}
+	for _, res := range qosResources {
+		// Validate name of the QoS-resource
+		name := string(res.Name)
+		if name == "" {
+			allErrs = append(allErrs, field.Required(fldPath.Child("name"), ""))
+		} else if qosResourceNames.Has(name) {
+			allErrs = append(allErrs, field.Duplicate(fldPath.Child("name"), name))
+		} else if nameErrs := ValidateQualifiedName(name, fldPath.Child("name")); len(nameErrs) > 0 {
+			allErrs = append(allErrs, nameErrs...)
+		}
+		qosResourceNames.Insert(name)
+
+		// Validate name of the class
+		if res.Class == "" {
+			allErrs = append(allErrs, field.Required(fldPath.Child("class"), ""))
+		} else if classErrs := ValidateQualifiedName(res.Class, fldPath.Child("class")); len(classErrs) > 0 {
+			allErrs = append(allErrs, classErrs...)
 		}
 	}
 	return allErrs
