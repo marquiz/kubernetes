@@ -36,6 +36,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	utilversion "k8s.io/apimachinery/pkg/util/version"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/record"
@@ -505,6 +506,9 @@ type podActions struct {
 	// where the index is the index of the specific container in the pod spec (
 	// pod.Spec.Containers).
 	ContainersToStart []int
+	// ContainersToNotInitialize contains container IDs that we don't want to
+	// initialize/start when (re-)creating a sandbox
+	ContainersToNotInitialize sets.Set[string]
 	// ContainersToKill keeps a map of containers that need to be killed, note that
 	// the key is the container ID of the container, while
 	// the value contains necessary information to kill a container.
@@ -851,9 +855,11 @@ func (m *kubeGenericRuntimeManager) computePodActions(ctx context.Context, pod *
 		}
 
 		// Get the containers to start, excluding the ones that succeeded if RestartPolicy is OnFailure.
+		changes.ContainersToNotInitialize = sets.New[string]()
 		var containersToStart []int
 		for idx, c := range pod.Spec.Containers {
 			if pod.Spec.RestartPolicy == v1.RestartPolicyOnFailure && containerSucceeded(&c, podStatus) {
+				changes.ContainersToNotInitialize.Insert(c.Name)
 				continue
 			}
 			containersToStart = append(containersToStart, idx)
@@ -1097,6 +1103,14 @@ func (m *kubeGenericRuntimeManager) SyncPod(ctx context.Context, pod *v1.Pod, po
 				return
 			}
 		}
+		// Cleanup any pre-initialized containers
+		for n, c := range podStatus.ContainersPreparedToStart {
+			klog.InfoS("Cleaning up pre-initialized container because PodSandbox is being killed", "containerName", n, "pod", klog.KObj(pod))
+			if c.CleanupFunc != nil {
+				c.CleanupFunc()
+			}
+		}
+		podStatus.ContainersPreparedToStart = nil
 	}
 
 	// Keep terminated init containers fairly aggressively controlled
@@ -1130,6 +1144,48 @@ func (m *kubeGenericRuntimeManager) SyncPod(ctx context.Context, pod *v1.Pod, po
 		createSandboxResult := kubecontainer.NewSyncResult(kubecontainer.CreatePodSandbox, format.Pod(pod))
 		result.AddSyncResult(createSandboxResult)
 
+		// Finalize preparation of container resources
+		klog.InfoS("Preparing container configs and resources for pod", "pod", klog.KObj(pod))
+		containerToStartConfigs := make(map[string]kubecontainer.ContainerToStartConfig)
+		for _, container := range pod.Spec.InitContainers {
+			config, cleanupAction, err := m.initializeContainerConfig(ctx, &container, pod, podIPs)
+			if err != nil {
+				klog.ErrorS(err, "Preparing init container resources for pod failed", "pod", klog.KObj(pod), "container", container)
+				cleanupAction()
+				return
+			}
+			containerToStartConfigs[container.Name] = kubecontainer.ContainerToStartConfig{
+				Config:      config,
+				CleanupFunc: cleanupAction,
+			}
+		}
+		for _, container := range pod.Spec.Containers {
+			config, cleanupAction, err := m.initializeContainerConfig(ctx, &container, pod, podIPs)
+			if err != nil {
+				klog.ErrorS(err, "Preparing container resources for pod failed", "pod", klog.KObj(pod), "container", container)
+				cleanupAction()
+				return
+			}
+			containerToStartConfigs[container.Name] = kubecontainer.ContainerToStartConfig{
+				Config:      config,
+				CleanupFunc: cleanupAction,
+			}
+		}
+		for _, c := range pod.Spec.EphemeralContainers {
+			container := (v1.Container)(c.EphemeralContainerCommon)
+			config, cleanupAction, err := m.initializeContainerConfig(ctx, &container, pod, podIPs)
+			if err != nil {
+				klog.ErrorS(err, "Preparing ephemeral container resources for pod failed", "pod", klog.KObj(pod), "container", container)
+				cleanupAction()
+				return
+			}
+			containerToStartConfigs[container.Name] = kubecontainer.ContainerToStartConfig{
+				Config:      config,
+				CleanupFunc: cleanupAction,
+			}
+		}
+		podStatus.ContainersPreparedToStart = containerToStartConfigs
+
 		// ConvertPodSysctlsVariableToDotsSeparator converts sysctl variable
 		// in the Pod.Spec.SecurityContext.Sysctls slice into a dot as a separator.
 		// runc uses the dot as the separator to verify whether the sysctl variable
@@ -1154,7 +1210,7 @@ func (m *kubeGenericRuntimeManager) SyncPod(ctx context.Context, pod *v1.Pod, po
 			}
 		}
 
-		podSandboxID, msg, err = m.createPodSandbox(ctx, pod, podContainerChanges.Attempt)
+		podSandboxID, msg, err = m.createPodSandbox(ctx, pod, podContainerChanges.Attempt, containerToStartConfigs)
 		if err != nil {
 			// createPodSandbox can return an error from CNI, CSI,
 			// or CRI if the Pod has been deleted while the POD is
@@ -1204,14 +1260,6 @@ func (m *kubeGenericRuntimeManager) SyncPod(ctx context.Context, pod *v1.Pod, po
 		}
 	}
 
-	// the start containers routines depend on pod ip(as in primary pod ip)
-	// instead of trying to figure out if we have 0 < len(podIPs)
-	// everytime, we short circuit it here
-	podIP := ""
-	if len(podIPs) != 0 {
-		podIP = podIPs[0]
-	}
-
 	// Get podSandboxConfig for containers to start.
 	configPodSandboxResult := kubecontainer.NewSyncResult(kubecontainer.ConfigPodSandbox, podSandboxID)
 	result.AddSyncResult(configPodSandboxResult)
@@ -1229,6 +1277,21 @@ func (m *kubeGenericRuntimeManager) SyncPod(ctx context.Context, pod *v1.Pod, po
 	// metricLabel is the label used to describe this type of container in monitoring metrics.
 	// currently: "container", "init_container" or "ephemeral_container"
 	start := func(ctx context.Context, typeName, metricLabel string, spec *startSpec) error {
+		cConfig, ok := podStatus.ContainersPreparedToStart[spec.container.Name]
+		if ok {
+			delete(podStatus.ContainersPreparedToStart, spec.container.Name)
+		} else {
+			klog.InfoS("Container config wasn't pre-initialized", "containerType", typeName, "containerName", spec.container.Name, "pod", klog.KObj(pod))
+			config, cleanupAction, err := m.initializeContainerConfig(ctx, spec.container, pod, podIPs)
+			if err != nil {
+				return err
+			}
+			cConfig = kubecontainer.ContainerToStartConfig{Config: config, CleanupFunc: cleanupAction}
+		}
+		if cConfig.CleanupFunc != nil {
+			defer cConfig.CleanupFunc()
+		}
+
 		startContainerResult := kubecontainer.NewSyncResult(kubecontainer.StartContainer, spec.container.Name)
 		result.AddSyncResult(startContainerResult)
 
@@ -1245,7 +1308,7 @@ func (m *kubeGenericRuntimeManager) SyncPod(ctx context.Context, pod *v1.Pod, po
 		}
 		klog.V(4).InfoS("Creating container in pod", "containerType", typeName, "container", spec.container, "pod", klog.KObj(pod))
 		// NOTE (aramase) podIPs are populated for single stack and dual stack clusters. Send only podIPs.
-		if msg, err := m.startContainer(ctx, podSandboxID, podSandboxConfig, spec, pod, podStatus, pullSecrets, podIP, podIPs); err != nil {
+		if msg, err := m.startContainer(ctx, podSandboxID, podSandboxConfig, spec, pod, podStatus, pullSecrets, cConfig.Config); err != nil {
 			// startContainer() returns well-defined error codes that have reasonable cardinality for metrics and are
 			// useful to cluster administrators to distinguish "server errors" from "user errors".
 			metrics.StartedContainersErrorsTotal.WithLabelValues(metricLabel, err.Error()).Inc()
@@ -1272,7 +1335,8 @@ func (m *kubeGenericRuntimeManager) SyncPod(ctx context.Context, pod *v1.Pod, po
 	// are errors starting an init container. In practice init containers will start first since ephemeral
 	// containers cannot be specified on pod creation.
 	for _, idx := range podContainerChanges.EphemeralContainersToStart {
-		start(ctx, "ephemeral container", metrics.EphemeralContainer, ephemeralContainerStartSpec(&pod.Spec.EphemeralContainers[idx]))
+		ec := &pod.Spec.EphemeralContainers[idx]
+		start(ctx, "ephemeral container", metrics.EphemeralContainer, ephemeralContainerStartSpec(ec))
 	}
 
 	if !utilfeature.DefaultFeatureGate.Enabled(features.SidecarContainers) {
@@ -1314,7 +1378,8 @@ func (m *kubeGenericRuntimeManager) SyncPod(ctx context.Context, pod *v1.Pod, po
 
 	// Step 8: start containers in podContainerChanges.ContainersToStart.
 	for _, idx := range podContainerChanges.ContainersToStart {
-		start(ctx, "container", metrics.Container, containerStartSpec(&pod.Spec.Containers[idx]))
+		container := &pod.Spec.Containers[idx]
+		start(ctx, "container", metrics.Container, containerStartSpec(container))
 	}
 
 	return

@@ -38,13 +38,16 @@ import (
 )
 
 // createPodSandbox creates a pod sandbox and returns (podSandBoxID, message, error).
-func (m *kubeGenericRuntimeManager) createPodSandbox(ctx context.Context, pod *v1.Pod, attempt uint32) (string, string, error) {
+func (m *kubeGenericRuntimeManager) createPodSandbox(ctx context.Context, pod *v1.Pod, attempt uint32, containerConfigs map[string]kubecontainer.ContainerToStartConfig) (string, string, error) {
 	podSandboxConfig, err := m.generatePodSandboxConfig(pod, attempt)
 	if err != nil {
 		message := fmt.Sprintf("Failed to generate sandbox config for pod %q: %v", format.Pod(pod), err)
 		klog.ErrorS(err, "Failed to generate sandbox config for pod", "pod", klog.KObj(pod))
 		return "", message, err
 	}
+
+	// Pass down resource information of all containers
+	m.passdownContainerResources(podSandboxConfig, pod, containerConfigs)
 
 	// Create pod logs directory
 	err = m.osInterface.MkdirAll(podSandboxConfig.LogDirectory, 0755)
@@ -154,7 +157,54 @@ func (m *kubeGenericRuntimeManager) generatePodSandboxConfig(pod *v1.Pod, attemp
 	if err := m.applySandboxResources(pod, podSandboxConfig); err != nil {
 		return nil, err
 	}
+
 	return podSandboxConfig, nil
+}
+
+func (m *kubeGenericRuntimeManager) passdownContainerResources(config *runtimeapi.PodSandboxConfig, pod *v1.Pod, containerConfigs map[string]kubecontainer.ContainerToStartConfig) {
+	r := runtimeapi.PodResourceConfig{
+		InitContainers: make([]*runtimeapi.ContainerResourceConfig, len(pod.Spec.InitContainers)),
+		Containers:     make([]*runtimeapi.ContainerResourceConfig, len(pod.Spec.Containers)),
+	}
+	config.PodResources = &r
+
+	// Get container resource requests and limits
+	for i, c := range pod.Spec.InitContainers {
+		cconfig, ok := containerConfigs[c.Name]
+		if !ok {
+			klog.InfoS("Resource info for init container not available!", "containerName", c.Name, "pod", klog.KObj(pod))
+			r.InitContainers[i] = &runtimeapi.ContainerResourceConfig{
+				Name: c.Name,
+			}
+		} else {
+			r.InitContainers[i] = &runtimeapi.ContainerResourceConfig{
+				Name:                c.Name,
+				KubernetesResources: cconfig.Config.KubernetesResources,
+				Mounts:              cconfig.Config.Mounts,
+				Devices:             cconfig.Config.Devices,
+				CDIDevices:          cconfig.Config.CDIDevices,
+			}
+		}
+	}
+	for i, c := range pod.Spec.Containers {
+		cconfig, ok := containerConfigs[c.Name]
+		if !ok {
+			klog.InfoS("Resource info for container not available!", "containerName", c.Name, "pod", klog.KObj(pod))
+			r.Containers[i] = &runtimeapi.ContainerResourceConfig{
+				Name: c.Name,
+			}
+		} else {
+			r.Containers[i] = &runtimeapi.ContainerResourceConfig{
+				Name:                c.Name,
+				KubernetesResources: cconfig.Config.KubernetesResources,
+				Mounts:              cconfig.Config.Mounts,
+				Devices:             cconfig.Config.Devices,
+				CDIDevices:          cconfig.Config.CDIDevices,
+			}
+		}
+	}
+
+	// Get devices resources
 }
 
 // generatePodSandboxLinuxConfig generates LinuxPodSandboxConfig from v1.Pod.

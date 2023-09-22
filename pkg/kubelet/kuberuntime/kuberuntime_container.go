@@ -42,6 +42,7 @@ import (
 	"k8s.io/klog/v2"
 
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -175,7 +176,7 @@ func calcRestartCountByLogDir(path string) (int, error) {
 // * create the container
 // * start the container
 // * run the post start lifecycle hooks (if applicable)
-func (m *kubeGenericRuntimeManager) startContainer(ctx context.Context, podSandboxID string, podSandboxConfig *runtimeapi.PodSandboxConfig, spec *startSpec, pod *v1.Pod, podStatus *kubecontainer.PodStatus, pullSecrets []v1.Secret, podIP string, podIPs []string) (string, error) {
+func (m *kubeGenericRuntimeManager) startContainer(ctx context.Context, podSandboxID string, podSandboxConfig *runtimeapi.PodSandboxConfig, spec *startSpec, pod *v1.Pod, podStatus *kubecontainer.PodStatus, pullSecrets []v1.Secret, containerConfig *runtimeapi.ContainerConfig) (string, error) {
 	container := spec.container
 
 	// Step 1: pull the image.
@@ -234,10 +235,7 @@ func (m *kubeGenericRuntimeManager) startContainer(ctx context.Context, podSandb
 		return s.Message(), ErrCreateContainerConfig
 	}
 
-	containerConfig, cleanupAction, err := m.generateContainerConfig(ctx, container, pod, restartCount, podIP, imageRef, podIPs, target)
-	if cleanupAction != nil {
-		defer cleanupAction()
-	}
+	err = m.finalizeContainerConfig(ctx, container, pod, restartCount, imageRef, target, containerConfig)
 	if err != nil {
 		s, _ := grpcstatus.FromError(err)
 		m.recordContainerEvent(pod, container, "", v1.EventTypeWarning, events.FailedToCreateContainer, "Error: %v", s.Message())
@@ -316,54 +314,45 @@ func (m *kubeGenericRuntimeManager) startContainer(ctx context.Context, podSandb
 	return "", nil
 }
 
-// generateContainerConfig generates container config for kubelet runtime v1.
-func (m *kubeGenericRuntimeManager) generateContainerConfig(ctx context.Context, container *v1.Container, pod *v1.Pod, restartCount int, podIP, imageRef string, podIPs []string, nsTarget *kubecontainer.ContainerID) (*runtimeapi.ContainerConfig, func(), error) {
+// initializeContainerConfig generates initial container config for kubelet runtime v1.
+func (m *kubeGenericRuntimeManager) initializeContainerConfig(ctx context.Context, container *v1.Container, pod *v1.Pod, podIPs []string) (*runtimeapi.ContainerConfig, func(), error) {
+	// the start containers routines depend on pod ip(as in primary pod ip)
+	// instead of trying to figure out if we have 0 < len(podIPs)
+	// everytime, we short circuit it here
+	podIP := ""
+	if len(podIPs) != 0 {
+		podIP = podIPs[0]
+	}
+
 	opts, cleanupAction, err := m.runtimeHelper.GenerateRunContainerOptions(ctx, pod, container, podIP, podIPs)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	uid, username, err := m.getImageUser(ctx, container.Image)
-	if err != nil {
-		return nil, cleanupAction, err
-	}
-
-	// Verify RunAsNonRoot. Non-root verification only supports numeric user.
-	if err := verifyRunAsNonRoot(pod, container, uid, username); err != nil {
-		return nil, cleanupAction, err
-	}
-
 	command, args := kubecontainer.ExpandContainerCommandAndArgs(container, opts.Envs)
-	logDir := BuildContainerLogsDirectory(pod.Namespace, pod.Name, pod.UID, container.Name)
-	err = m.osInterface.MkdirAll(logDir, 0755)
-	if err != nil {
-		return nil, cleanupAction, fmt.Errorf("create container log directory for container %s failed: %v", container.Name, err)
-	}
-	containerLogsPath := buildContainerLogsPath(container.Name, restartCount)
-	restartCountUint32 := uint32(restartCount)
 	config := &runtimeapi.ContainerConfig{
 		Metadata: &runtimeapi.ContainerMetadata{
-			Name:    container.Name,
-			Attempt: restartCountUint32,
+			Name: container.Name,
 		},
-		Image:       &runtimeapi.ImageSpec{Image: imageRef, UserSpecifiedImage: container.Image},
 		Command:     command,
 		Args:        args,
 		WorkingDir:  container.WorkingDir,
 		Labels:      newContainerLabels(container, pod),
-		Annotations: newContainerAnnotations(container, pod, restartCount, opts),
+		Annotations: map[string]string{},
 		Devices:     makeDevices(opts),
 		CDIDevices:  makeCDIDevices(opts),
 		Mounts:      m.makeMounts(opts, container),
-		LogPath:     containerLogsPath,
 		Stdin:       container.Stdin,
 		StdinOnce:   container.StdinOnce,
 		Tty:         container.TTY,
+		KubernetesResources: &runtimeapi.KubernetesResources{
+			Requests: resourceListToCRI(container.Resources.Requests),
+			Limits:   resourceListToCRI(container.Resources.Limits),
+		},
 	}
 
-	// set platform specific configurations.
-	if err := m.applyPlatformSpecificContainerConfig(config, container, pod, uid, username, nsTarget); err != nil {
-		return nil, cleanupAction, err
+	for _, a := range opts.Annotations {
+		config.Annotations[a.Name] = a.Value
 	}
 
 	// set environment variables
@@ -378,6 +367,53 @@ func (m *kubeGenericRuntimeManager) generateContainerConfig(ctx context.Context,
 	config.Envs = envs
 
 	return config, cleanupAction, nil
+}
+
+func resourceListToCRI(in v1.ResourceList) map[string]*resource.Quantity {
+	r := make(map[string]*resource.Quantity, len(in))
+	for k, v := range in {
+		q := v.DeepCopy()
+		r[string(k)] = &q
+	}
+	return r
+}
+
+// finalizeContainerConfig finalizes container config for kubelet runtime v1.
+func (m *kubeGenericRuntimeManager) finalizeContainerConfig(ctx context.Context, container *v1.Container, pod *v1.Pod, restartCount int, imageRef string, nsTarget *kubecontainer.ContainerID, config *runtimeapi.ContainerConfig) error {
+	uid, username, err := m.getImageUser(ctx, container.Image)
+	if err != nil {
+		return err
+	}
+
+	// Verify RunAsNonRoot. Non-root verification only supports numeric user.
+	if err := verifyRunAsNonRoot(pod, container, uid, username); err != nil {
+		return err
+	}
+
+	logDir := BuildContainerLogsDirectory(pod.Namespace, pod.Name, pod.UID, container.Name)
+	err = m.osInterface.MkdirAll(logDir, 0755)
+	if err != nil {
+		return fmt.Errorf("create container log directory for container %s failed: %v", container.Name, err)
+	}
+
+	// Update config
+	config.Image = &runtimeapi.ImageSpec{Image: imageRef, UserSpecifiedImage: container.Image}
+	config.LogPath = buildContainerLogsPath(container.Name, restartCount)
+	config.Metadata.Attempt = uint32(restartCount)
+
+	// TODO: change newContainerAnnotations to updateContainerAnnotations
+	//       (ditching kubecontainer.RunContainerOptionsfrom args)
+	annotations := newContainerAnnotations(container, pod, restartCount, &kubecontainer.RunContainerOptions{})
+	for k, v := range annotations {
+		config.Annotations[k] = v
+	}
+
+	// set platform specific configurations.
+	if err := m.applyPlatformSpecificContainerConfig(config, container, pod, uid, username, nsTarget); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m *kubeGenericRuntimeManager) updateContainerResources(pod *v1.Pod, container *v1.Container, containerID kubecontainer.ContainerID) error {
@@ -447,6 +483,8 @@ func (m *kubeGenericRuntimeManager) makeMounts(opts *kubecontainer.RunContainerO
 		// Because the PodContainerDir contains pod uid and container name which is unique enough,
 		// here we just add a random id to make the path unique for different instances
 		// of the same container.
+		//
+		// TODO: (marquiz) move the creation of the log path to the container start
 		cid := makeUID()
 		containerLogPath := filepath.Join(opts.PodContainerDir, cid)
 		fs, err := m.osInterface.Create(containerLogPath)
