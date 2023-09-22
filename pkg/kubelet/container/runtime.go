@@ -322,6 +322,13 @@ type PodStatus struct {
 	SandboxStatuses []*runtimeapi.PodSandboxStatus
 	// Timestamp at which container and pod statuses were recorded
 	TimeStamp time.Time
+	// ContainersPreparedToStart is a cache for prepared container configs
+	ContainersPreparedToStart map[string]ContainerToStartConfig
+}
+
+type ContainerToStartConfig struct {
+	Config      *runtimeapi.ContainerConfig
+	CleanupFunc func()
 }
 
 // ContainerResources represents the Resources allocated to the running container.
