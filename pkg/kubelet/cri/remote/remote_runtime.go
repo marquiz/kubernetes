@@ -448,7 +448,7 @@ func (r *remoteRuntimeService) containerStatusV1(ctx context.Context, containerI
 }
 
 // UpdateContainerResources updates a containers resource config
-func (r *remoteRuntimeService) UpdateContainerResources(ctx context.Context, containerID string, resources *runtimeapi.ContainerResources) (err error) {
+func (r *remoteRuntimeService) UpdateContainerResources(ctx context.Context, containerID string, resources *runtimeapi.ContainerResources, k8sResources *runtimeapi.KubernetesResources) (err error) {
 	klog.V(10).InfoS("[RemoteRuntimeService] UpdateContainerResources", "containerID", containerID, "timeout", r.timeout)
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
