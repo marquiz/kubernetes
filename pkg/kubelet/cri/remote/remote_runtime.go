@@ -41,6 +41,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/metrics"
 	"k8s.io/kubernetes/pkg/kubelet/util"
 	"k8s.io/kubernetes/pkg/probe/exec"
+	"sigs.k8s.io/yaml"
 
 	utilexec "k8s.io/utils/exec"
 )
@@ -180,6 +181,8 @@ func (r *remoteRuntimeService) RunPodSandbox(ctx context.Context, config *runtim
 	timeout := r.timeout * 2
 
 	klog.V(10).InfoS("[RemoteRuntimeService] RunPodSandbox", "config", config, "runtimeHandler", runtimeHandler, "timeout", timeout)
+	dump, _ := yaml.Marshal(config.PodResources)
+	klog.InfoS("RUNPODSANDBOX", "resources", string(dump))
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -450,6 +453,8 @@ func (r *remoteRuntimeService) containerStatusV1(ctx context.Context, containerI
 // UpdateContainerResources updates a containers resource config
 func (r *remoteRuntimeService) UpdateContainerResources(ctx context.Context, containerID string, resources *runtimeapi.ContainerResources, k8sResources *runtimeapi.KubernetesResources) (err error) {
 	klog.V(10).InfoS("[RemoteRuntimeService] UpdateContainerResources", "containerID", containerID, "timeout", r.timeout)
+	dump, _ := yaml.Marshal(k8sResources)
+	klog.InfoS("UPDATECONTAINERRESOURCES", "resources", string(dump))
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
