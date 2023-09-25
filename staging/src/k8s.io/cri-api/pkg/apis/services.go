@@ -46,7 +46,7 @@ type ContainerManager interface {
 	ContainerStatus(ctx context.Context, containerID string, verbose bool) (*runtimeapi.ContainerStatusResponse, error)
 	// UpdateContainerResources updates ContainerConfig of the container synchronously.
 	// If runtime fails to transactionally update the requested resources, an error is returned.
-	UpdateContainerResources(ctx context.Context, containerID string, resources *runtimeapi.ContainerResources) error
+	UpdateContainerResources(ctx context.Context, containerID string, resources *runtimeapi.ContainerResources, k8sResources *runtimeapi.KubernetesResources) error
 	// ExecSync executes a command in the container, and returns the stdout output.
 	// If command exits with a non-zero exit code, an error is returned.
 	ExecSync(ctx context.Context, containerID string, cmd []string, timeout time.Duration) (stdout []byte, stderr []byte, err error)

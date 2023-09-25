@@ -132,11 +132,11 @@ func (in instrumentedRuntimeService) ContainerStatus(ctx context.Context, contai
 	return out, err
 }
 
-func (in instrumentedRuntimeService) UpdateContainerResources(ctx context.Context, containerID string, resources *runtimeapi.ContainerResources) error {
+func (in instrumentedRuntimeService) UpdateContainerResources(ctx context.Context, containerID string, resources *runtimeapi.ContainerResources, k8sResources *runtimeapi.KubernetesResources) error {
 	const operation = "update_container"
 	defer recordOperation(operation, time.Now())
 
-	err := in.service.UpdateContainerResources(ctx, containerID, resources)
+	err := in.service.UpdateContainerResources(ctx, containerID, resources, k8sResources)
 	recordError(operation, err)
 	return err
 }

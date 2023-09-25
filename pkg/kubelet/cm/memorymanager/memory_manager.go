@@ -45,7 +45,7 @@ const memoryManagerStateFileName = "memory_manager_state"
 type ActivePodsFunc func() []*v1.Pod
 
 type runtimeService interface {
-	UpdateContainerResources(ctx context.Context, id string, resources *runtimeapi.ContainerResources) error
+	UpdateContainerResources(ctx context.Context, id string, resources *runtimeapi.ContainerResources, k8sResources *runtimeapi.KubernetesResources) error
 }
 
 type sourcesReadyStub struct{}
