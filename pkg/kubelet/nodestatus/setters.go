@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"os"
 	goruntime "runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -37,6 +39,7 @@ import (
 	cloudproviderapi "k8s.io/cloud-provider/api"
 	cloudprovidernodeutil "k8s.io/cloud-provider/node/helpers"
 	"k8s.io/component-base/version"
+	kubeletoptions "k8s.io/kubernetes/cmd/kubelet/app/options"
 	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
 	"k8s.io/kubernetes/pkg/features"
 	"k8s.io/kubernetes/pkg/kubelet/cadvisor"
@@ -391,21 +394,77 @@ func MachineInfo(nodeName string,
 
 		// Set QoS resources
 		runtimeStatus, err := runtimeStatusFunc(ctx)
+		crs := v1.QOSResourceStatus{}
 		if err != nil {
 			klog.ErrorS(err, "Error getting runtime status")
 		} else {
-			crs := v1.QOSResourceStatus{}
 			for _, resource := range runtimeStatus.PodQOSResources {
 				crs.PodQOSResources = append(crs.PodQOSResources, *resource.DeepCopy())
 			}
 			for _, resource := range runtimeStatus.ContainerQOSResources {
 				crs.ContainerQOSResources = append(crs.ContainerQOSResources, *resource.DeepCopy())
 			}
-			node.Status.QOSResources = crs
 		}
 
+		// HACK: add fake QoS resources
+		if fakePodQOSResources == nil {
+			fakePodQOSResources = parseFakeQOSResources(kubeletoptions.FakePodQOSResources)
+		}
+		if fakeContainerQOSResources == nil {
+			fakeContainerQOSResources = parseFakeQOSResources(kubeletoptions.FakeContainerQOSResources)
+		}
+		crs.PodQOSResources = append(crs.PodQOSResources, fakePodQOSResources...)
+		crs.ContainerQOSResources = append(crs.ContainerQOSResources, fakeContainerQOSResources...)
+
+		node.Status.QOSResources = crs
 		return nil
 	}
+}
+
+var fakePodQOSResources []v1.QOSResourceInfo
+var fakeContainerQOSResources []v1.QOSResourceInfo
+
+func parseFakeQOSResources(opts []string) []v1.QOSResourceInfo {
+	fake := []v1.QOSResourceInfo{}
+	for _, opt := range opts {
+		res, err := parseFakeQOSResource(opt)
+		if err != nil {
+			fmt.Printf("Invalid fake QOS resource: %s\n", err)
+			os.Exit(1)
+		}
+		fake = append(fake, *res)
+	}
+	return fake
+}
+
+func parseFakeQOSResource(s string) (*v1.QOSResourceInfo, error) {
+	split := strings.SplitN(s, ":", 2)
+	if len(split) != 2 {
+		return nil, fmt.Errorf("Invalid fake QoS resource schema (%q), must be '<resource>:<class>[=<capacity],...'", s)
+	}
+
+	split2 := strings.Split(split[1], ",")
+	classes := make([]v1.QOSResourceClassInfo, len(split2))
+	if len(split2) == 0 {
+		return nil, fmt.Errorf("Invalid fake QoS resource schema (%q), must have at least one class", s)
+	}
+	for i, classSchema := range split2 {
+		split := strings.SplitN(classSchema, "=", 2)
+		classes[i].Name = split[0]
+		if len(split) > 1 {
+			capa, err := strconv.Atoi(split[1])
+			if err != nil {
+				return nil, fmt.Errorf("Invalid fake QoS resource schema (%q): %w", s, err)
+			}
+			classes[i].Capacity = int64(capa)
+		}
+	}
+
+	res := v1.QOSResourceInfo{
+		Name:    v1.QOSResourceName(split[0]),
+		Classes: classes,
+	}
+	return &res, nil
 }
 
 // VersionInfo returns a Setter that updates version-related information on the node.
