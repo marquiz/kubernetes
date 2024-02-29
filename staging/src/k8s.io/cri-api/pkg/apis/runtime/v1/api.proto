@@ -427,8 +427,7 @@ message PodSandboxMetadata {
 // PodResourceConfig contains information of all resources requirements of
 // the containers of a pod.
 message PodResourceConfig {
-    repeated ContainerResourceConfig init_containers = 1;
-    repeated ContainerResourceConfig containers = 2;
+    repeated ContainerResourceConfig containers = 1;
 }
 
 // ContainerResourceConfig contains information of all resource requirements of
@@ -437,19 +436,27 @@ message ContainerResourceConfig {
     // Name of the container
     string name= 1;
 
+    // Name of the container
+    ContainerType type= 2;
+
     // Kubernetes resource spec of the container
-    KubernetesResources kubernetes_resources = 2;
+    KubernetesResources kubernetes_resources = 3;
 
     // Mounts for the container.
-    repeated Mount mounts = 3;
+    repeated Mount mounts = 4;
 
     // Devices for the container.
-    repeated Device devices = 4;
+    repeated Device devices = 5;
 
     // CDI devices for the container.
-    repeated CDIDevice CDI_devices = 5;
+    repeated CDIDevice CDI_devices = 6;
 }
 
+enum ContainerType {
+    INIT_CONTAINER    = 0;
+    SIDECAR_CONTAINER = 1;
+    REGULAR_CONTAINER = 2;
+}
 // PodSandboxConfig holds all the required and optional fields for creating a
 // sandbox.
 message PodSandboxConfig {
