@@ -163,45 +163,48 @@ func (m *kubeGenericRuntimeManager) generatePodSandboxConfig(pod *v1.Pod, attemp
 
 func (m *kubeGenericRuntimeManager) passdownContainerResources(config *runtimeapi.PodSandboxConfig, pod *v1.Pod, containerConfigs map[string]kubecontainer.ContainerToStartConfig) {
 	r := runtimeapi.PodResourceConfig{
-		InitContainers: make([]*runtimeapi.ContainerResourceConfig, len(pod.Spec.InitContainers)),
-		Containers:     make([]*runtimeapi.ContainerResourceConfig, len(pod.Spec.Containers)),
+		Containers: make([]*runtimeapi.ContainerResourceConfig, 0, len(pod.Spec.InitContainers)+len(pod.Spec.Containers)),
 	}
 	config.PodResources = &r
 
 	// Get container resource requests and limits
-	for i, c := range pod.Spec.InitContainers {
+	for _, c := range pod.Spec.InitContainers {
+		containerType := runtimeapi.ContainerType_INIT_CONTAINER
+		if c.RestartPolicy != nil && *c.RestartPolicy == v1.ContainerRestartPolicyAlways {
+			containerType = runtimeapi.ContainerType_SIDECAR_CONTAINER
+		}
+		crc := &runtimeapi.ContainerResourceConfig{
+			Name: c.Name,
+			Type: containerType,
+		}
+
 		cconfig, ok := containerConfigs[c.Name]
 		if !ok {
 			klog.InfoS("Resource info for init container not available!", "containerName", c.Name, "pod", klog.KObj(pod))
-			r.InitContainers[i] = &runtimeapi.ContainerResourceConfig{
-				Name: c.Name,
-			}
 		} else {
-			r.InitContainers[i] = &runtimeapi.ContainerResourceConfig{
-				Name:                c.Name,
-				KubernetesResources: cconfig.Config.KubernetesResources,
-				Mounts:              cconfig.Config.Mounts,
-				Devices:             cconfig.Config.Devices,
-				CDIDevices:          cconfig.Config.CDIDevices,
-			}
+			crc.KubernetesResources = cconfig.Config.KubernetesResources
+			crc.Mounts = cconfig.Config.Mounts
+			crc.Devices = cconfig.Config.Devices
+			crc.CDIDevices = cconfig.Config.CDIDevices
 		}
+		r.Containers = append(r.Containers, crc)
 	}
-	for i, c := range pod.Spec.Containers {
+	for _, c := range pod.Spec.Containers {
+		crc := &runtimeapi.ContainerResourceConfig{
+			Name: c.Name,
+			Type: runtimeapi.ContainerType_REGULAR_CONTAINER,
+		}
+
 		cconfig, ok := containerConfigs[c.Name]
 		if !ok {
-			klog.InfoS("Resource info for container not available!", "containerName", c.Name, "pod", klog.KObj(pod))
-			r.Containers[i] = &runtimeapi.ContainerResourceConfig{
-				Name: c.Name,
-			}
+			klog.InfoS("Resource info for regular container not available!", "containerName", c.Name, "pod", klog.KObj(pod))
 		} else {
-			r.Containers[i] = &runtimeapi.ContainerResourceConfig{
-				Name:                c.Name,
-				KubernetesResources: cconfig.Config.KubernetesResources,
-				Mounts:              cconfig.Config.Mounts,
-				Devices:             cconfig.Config.Devices,
-				CDIDevices:          cconfig.Config.CDIDevices,
-			}
+			crc.KubernetesResources = cconfig.Config.KubernetesResources
+			crc.Mounts = cconfig.Config.Mounts
+			crc.Devices = cconfig.Config.Devices
+			crc.CDIDevices = cconfig.Config.CDIDevices
 		}
+		r.Containers = append(r.Containers, crc)
 	}
 
 	// Get devices resources
