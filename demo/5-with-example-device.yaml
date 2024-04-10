@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo
+spec:
+  containers:
+  - name: cnt-1
+    image: k8s.gcr.io/pause
+    resources:
+      requests:
+        example.com/resource: 1
+      limits:
+        example.com/resource: 1

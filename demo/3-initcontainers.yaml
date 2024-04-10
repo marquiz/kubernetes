@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo
+spec:
+  initContainers:
+  - name: init-cnt-1
+    image: k8s.gcr.io/busybox
+    command:
+      - "/bin/sh"
+      - "-c"
+    args:
+      - |
+        sleep 2
+  - name: sidecar-cnt-1
+    restartPolicy: Always
+    image: k8s.gcr.io/busybox
+    command:
+      - "/bin/sh"
+      - "-c"
+    args:
+      - |
+        while true; do date; sleep 5; done
+  - name: init-cnt-2
+    image: k8s.gcr.io/busybox
+    command:
+      - "/bin/sh"
+      - "-c"
+    args:
+      - |
+        sleep 2
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 150Mi
+
+  containers:
+  - name: cnt-1
+    image: k8s.gcr.io/busybox
+    command:
+      - "/bin/sh"
+      - "-c"
+    args:
+      - |
+        cat /etc/hosts;
+        while :; do date; sleep 10; done
+    resources:
+      requests:
+        cpu: 100m
+      limits:
+        cpu: 200m
+
+  - name: cnt-2
+    image: k8s.gcr.io/busybox
+    command:
+      - "/bin/sh"
+      - "-c"
+    args:
+      - |
+        cat /etc/hosts;
+        while :; do date; sleep 10; done
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
