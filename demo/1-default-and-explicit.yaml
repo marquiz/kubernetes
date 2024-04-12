@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo
+spec:
+  containers:
+  # cnt-1 status should show the default ("Enabled")
+  - name: cnt-1
+    image: k8s.gcr.io/pause
+  - name: cnt-2
+    image: k8s.gcr.io/pause
+    resources:
+      qosResources:
+        - name: oomgroupkill
+          class: Disabled
