@@ -44,6 +44,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/cm"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/kubelet/qos"
+	"k8s.io/kubernetes/pkg/kubelet/qosresources"
 	kubelettypes "k8s.io/kubernetes/pkg/kubelet/types"
 )
 
@@ -100,7 +101,11 @@ func (m *kubeGenericRuntimeManager) generateLinuxContainerResources(pod *v1.Pod,
 	if _, cpuRequestExists := container.Resources.Requests[v1.ResourceCPU]; cpuRequestExists {
 		cpuRequest = container.Resources.Requests.Cpu()
 	}
-	lcr := m.calculateLinuxResources(cpuRequest, container.Resources.Limits.Cpu(), container.Resources.Limits.Memory())
+	oomGroupKill := true
+	if qosresources.GetContainerQOSResourceClass(container, v1.QOSResourceOOMGroupKill) == v1.QOSResourceClassOOMGroupKillDisabled {
+		oomGroupKill = false
+	}
+	lcr := m.calculateLinuxResources(cpuRequest, container.Resources.Limits.Cpu(), container.Resources.Limits.Memory(), oomGroupKill)
 
 	lcr.OomScoreAdj = int64(qos.GetContainerOOMScoreAdjust(pod, container,
 		int64(m.machineInfo.MemoryCapacity)))
@@ -206,7 +211,7 @@ func (m *kubeGenericRuntimeManager) generateContainerResources(pod *v1.Pod, cont
 }
 
 // calculateLinuxResources will create the linuxContainerResources type based on the provided CPU and memory resource requests, limits
-func (m *kubeGenericRuntimeManager) calculateLinuxResources(cpuRequest, cpuLimit, memoryLimit *resource.Quantity) *runtimeapi.LinuxContainerResources {
+func (m *kubeGenericRuntimeManager) calculateLinuxResources(cpuRequest, cpuLimit, memoryLimit *resource.Quantity, oomGroupKill bool) *runtimeapi.LinuxContainerResources {
 	resources := runtimeapi.LinuxContainerResources{}
 	var cpuShares int64
 
@@ -242,7 +247,7 @@ func (m *kubeGenericRuntimeManager) calculateLinuxResources(cpuRequest, cpuLimit
 	}
 
 	// runc requires cgroupv2 for unified mode
-	if isCgroup2UnifiedMode() {
+	if isCgroup2UnifiedMode() && oomGroupKill {
 		resources.Unified = map[string]string{
 			// Ask the kernel to kill all processes in the container cgroup in case of OOM.
 			// See memory.oom.group in https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html for

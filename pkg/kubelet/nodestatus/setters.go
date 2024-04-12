@@ -43,6 +43,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/cm"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/kubelet/events"
+	"k8s.io/kubernetes/pkg/kubelet/qosresources"
 	"k8s.io/kubernetes/pkg/volume"
 	netutils "k8s.io/utils/net"
 
@@ -389,21 +390,23 @@ func MachineInfo(nodeName string,
 			}
 		}
 
-		// Set QoS resources
+		// Set Kubernetes-managed QoS resources
+		crs := qosresources.GetAvailableQOSResources()
+
+		// Set CRI-managed QoS resources
 		runtimeStatus, err := runtimeStatusFunc(ctx)
 		if err != nil {
 			klog.ErrorS(err, "Error getting runtime status")
 		} else {
-			crs := v1.QOSResourceStatus{}
 			for _, resource := range runtimeStatus.PodQOSResources {
 				crs.PodQOSResources = append(crs.PodQOSResources, *resource.DeepCopy())
 			}
 			for _, resource := range runtimeStatus.ContainerQOSResources {
 				crs.ContainerQOSResources = append(crs.ContainerQOSResources, *resource.DeepCopy())
 			}
-			node.Status.QOSResources = crs
 		}
 
+		node.Status.QOSResources = crs
 		return nil
 	}
 }
