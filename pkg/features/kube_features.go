@@ -385,6 +385,12 @@ const (
 	// access for different tenants.
 	KubeletEnsureSecretPulledImages featuregate.Feature = "KubeletEnsureSecretPulledImages"
 
+	// owner: @marquiz
+	// kep: TBA
+	//
+	// Enable discovery of node resources from the CRI.
+	KubeletCRIResourceDiscovery featuregate.Feature = "KubeletCRIResourceDiscovery"
+
 	// owner: @vinayakankugoyal
 	// kep: http://kep.k8s.io/2862
 	//
@@ -1435,6 +1441,10 @@ var defaultVersionedKubernetesFeatureGates = map[featuregate.Feature]featuregate
 	},
 
 	KubeletEnsureSecretPulledImages: {
+		{Version: version.MustParse("1.33"), Default: false, PreRelease: featuregate.Alpha},
+	},
+
+	KubeletCRIResourceDiscovery: {
 		{Version: version.MustParse("1.33"), Default: false, PreRelease: featuregate.Alpha},
 	},
 
