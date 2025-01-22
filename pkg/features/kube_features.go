@@ -352,6 +352,12 @@ const (
 	// fallback to using it's cgroupDriver option.
 	KubeletCgroupDriverFromCRI featuregate.Feature = "KubeletCgroupDriverFromCRI"
 
+	// owner: @marquiz
+	// kep: TBA
+	//
+	// Enable discovery of node resources from the CRI.
+	KubeletCRIResourceDiscovery featuregate.Feature = "KubeletCRIResourceDiscovery"
+
 	// owner: @vinayakankugoyal
 	// kep: http://kep.k8s.io/2862
 	//
