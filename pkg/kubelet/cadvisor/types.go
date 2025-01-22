@@ -31,6 +31,9 @@ type Interface interface {
 	GetRequestedContainersInfo(containerName string, options cadvisorapiv2.RequestOptions) (map[string]*cadvisorapi.ContainerInfo, error)
 	MachineInfo() (*cadvisorapi.MachineInfo, error)
 
+	// SetMachineInfo updates the machine info.
+	SetMachineInfo(*cadvisorapi.MachineInfo)
+
 	VersionInfo() (*cadvisorapi.VersionInfo, error)
 
 	// Returns usage information about the filesystem holding container images.
