@@ -49,6 +49,9 @@ type cadvisorClient struct {
 	imageFsInfoProvider ImageFsInfoProvider
 	rootPath            string
 	manager.Manager
+
+	// machineInfo is a cached machine info from a 3rd party source
+	machineInfo *cadvisorapi.MachineInfo
 }
 
 var _ Interface = new(cadvisorClient)
@@ -145,7 +148,14 @@ func (cc *cadvisorClient) VersionInfo() (*cadvisorapi.VersionInfo, error) {
 }
 
 func (cc *cadvisorClient) MachineInfo() (*cadvisorapi.MachineInfo, error) {
+	if cc.machineInfo != nil {
+		return cc.machineInfo, nil
+	}
 	return cc.GetMachineInfo()
+}
+
+func (cc *cadvisorClient) SetMachineInfo(m *cadvisorapi.MachineInfo) {
+	cc.machineInfo = m
 }
 
 func (cc *cadvisorClient) ImagesFsInfo(ctx context.Context) (cadvisorapiv2.FsInfo, error) {
