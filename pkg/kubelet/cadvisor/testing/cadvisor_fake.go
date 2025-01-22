@@ -26,7 +26,8 @@ import (
 
 // Fake cadvisor.Interface implementation.
 type Fake struct {
-	NodeName string
+	NodeName    string
+	machineInfo *cadvisorapi.MachineInfo
 }
 
 const (
@@ -59,6 +60,10 @@ func (c *Fake) GetRequestedContainersInfo(containerName string, options cadvisor
 
 // MachineInfo is a fake implementation of Interface.MachineInfo.
 func (c *Fake) MachineInfo() (*cadvisorapi.MachineInfo, error) {
+	if c.machineInfo != nil {
+		return c.machineInfo, nil
+	}
+
 	// Simulate a machine with 1 core and 3.75GB of memory.
 	// We set it to non-zero values to make non-zero-capacity machines in Kubemark.
 	return &cadvisorapi.MachineInfo{
@@ -66,6 +71,10 @@ func (c *Fake) MachineInfo() (*cadvisorapi.MachineInfo, error) {
 		InstanceID:     cadvisorapi.InstanceID(c.NodeName),
 		MemoryCapacity: fakeMemoryCapacity,
 	}, nil
+}
+
+func (c *Fake) SetMachineInfo(m *cadvisorapi.MachineInfo) {
+	c.machineInfo = m
 }
 
 // VersionInfo is a fake implementation of Interface.VersionInfo.
