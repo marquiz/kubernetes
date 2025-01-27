@@ -437,6 +437,10 @@ func (m *kubeGenericRuntimeManager) updatePodSandboxResources(ctx context.Contex
 	return nil
 }
 
+func (m *kubeGenericRuntimeManager) UpdateContainerResources(ctx context.Context, pod *v1.Pod, container *v1.Container, containerID kubecontainer.ContainerID) error {
+	return m.updateContainerResources(ctx, pod, container, containerID)
+}
+
 // makeDevices generates container devices for kubelet runtime v1.
 func makeDevices(opts *kubecontainer.RunContainerOptions) []*runtimeapi.Device {
 	devices := make([]*runtimeapi.Device, len(opts.Devices))

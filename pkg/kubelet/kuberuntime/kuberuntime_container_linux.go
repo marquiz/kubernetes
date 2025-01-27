@@ -142,8 +142,12 @@ func (m *kubeGenericRuntimeManager) generateLinuxContainerResources(ctx context.
 	logger.V(5).Info("Enforcing CFS quota", "pod", klog.KObj(pod), "unlimited", disableCPUQuota)
 	lcr := m.calculateLinuxResources(cpuRequest, cpuLimit, memoryLimit, disableCPUQuota)
 
+	machineInfo := m.machineInfo
+	if m.getCachedMachineInfo != nil {
+		machineInfo, _ = m.getCachedMachineInfo()
+	}
 	lcr.OomScoreAdj = int64(qos.GetContainerOOMScoreAdjust(pod, container,
-		int64(m.machineInfo.MemoryCapacity)))
+		int64(machineInfo.MemoryCapacity)))
 
 	lcr.HugepageLimits = GetHugepageLimitsFromResources(ctx, pod, container.Resources)
 
@@ -207,7 +211,11 @@ func (m *kubeGenericRuntimeManager) configureContainerSwapResources(ctx context.
 		return
 	}
 
-	swapConfigurationHelper := newSwapConfigurationHelper(*m.machineInfo, m.getSwapControllerAvailable)
+	machineInfo := m.machineInfo
+	if m.getCachedMachineInfo != nil {
+		machineInfo, _ = m.getCachedMachineInfo()
+	}
+	swapConfigurationHelper := newSwapConfigurationHelper(*machineInfo, m.getSwapControllerAvailable)
 	// NOTE(ehashman): Behavior is defined in the opencontainers runtime spec:
 	// https://github.com/opencontainers/runtime-spec/blob/1c3f411f041711bbeecf35ff7e93461ea6789220/config-linux.md#memory
 	switch m.GetContainerSwapBehavior(pod, container) {

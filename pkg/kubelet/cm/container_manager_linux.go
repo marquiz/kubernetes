@@ -27,8 +27,10 @@ import (
 	"sync"
 	"time"
 
+	cadvisorapi "github.com/google/cadvisor/info/v1"
 	"github.com/opencontainers/cgroups"
 	"github.com/opencontainers/cgroups/manager"
+
 	"k8s.io/klog/v2"
 	"k8s.io/mount-utils"
 	utilpath "k8s.io/utils/path"
@@ -1099,4 +1101,47 @@ func (cm *containerManagerImpl) UpdateAllocatedResourcesStatus(pod *v1.Pod, stat
 
 func (cm *containerManagerImpl) Updates() <-chan resourceupdates.Update {
 	return cm.resourceUpdates
+}
+
+func (cm *containerManagerImpl) ResyncComponents(machineInfo *cadvisorapi.MachineInfo) error {
+	var internalCapacity = v1.ResourceList{}
+	capacity := cadvisor.CapacityFromMachineInfo(machineInfo)
+	for k, v := range capacity {
+		internalCapacity[k] = v
+	}
+	pidLimits, err := pidlimit.Stats()
+	if err == nil && pidLimits != nil && pidLimits.MaxPID != nil {
+		internalCapacity[pidlimit.PIDs] = *resource.NewQuantity(int64(*pidLimits.MaxPID), resource.DecimalSI)
+	}
+
+	// Update capacity and internalCapacity from new machine info
+	cm.Lock()
+	cm.capacity = capacity
+	cm.internalCapacity = internalCapacity
+	cm.Unlock()
+
+	nodeAllocatableReservation := cm.GetNodeAllocatableReservation()
+	reservedMemory := cm.NodeConfig.MemoryManagerReservedMemory
+
+	// Re-sync Topology manager
+	if err := cm.topologyManager.SyncMachineInfo(machineInfo, cm.NodeConfig.TopologyManagerPolicy, cm.NodeConfig.TopologyManagerScope, cm.NodeConfig.TopologyManagerPolicyOptions); err != nil {
+		return err
+	}
+
+	// Re-sync Device manager
+	if err := cm.deviceManager.SyncMachineInfo(machineInfo, cm.topologyManager); err != nil {
+		return err
+	}
+
+	// Re-sync CPU manager
+	if err := cm.cpuManager.SyncMachineInfo(machineInfo); err != nil {
+		return err
+	}
+
+	// Re-sync Memory manager
+	if err := cm.memoryManager.SyncMachineInfo(cm.NodeConfig.MemoryManagerPolicy, machineInfo, nodeAllocatableReservation, reservedMemory, cm.topologyManager); err != nil {
+		return err
+	}
+
+	return nil
 }

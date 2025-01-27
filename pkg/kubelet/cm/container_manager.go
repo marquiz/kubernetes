@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	cadvisorapi "github.com/google/cadvisor/info/v1"
+
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -161,6 +163,10 @@ type ContainerManager interface {
 
 	// ContainerHasExclusiveCPUs returns true if the provided container in the pod has exclusive cpu
 	ContainerHasExclusiveCPUs(pod *v1.Pod, container *v1.Container) bool
+
+	// ResyncComponents will resyc the resource managers like cpu, memory and topology managers
+	// with updated machineInfo
+	ResyncComponents(machineInfo *cadvisorapi.MachineInfo) error
 
 	// Implements the PodResources Provider API
 	podresources.CPUsProvider
