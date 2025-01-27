@@ -996,6 +996,13 @@ const (
 	// operation when scheduling a Pod by setting the `metadata.labels` field on the submitted Binding,
 	// similar to how `metadata.annotations` behaves.
 	PodTopologyLabelsAdmission featuregate.Feature = "PodTopologyLabelsAdmission"
+
+	// owner: @karthik-k-n
+	// key: https://kep.k8s.io/3953
+	// alpha: 1.33
+	//
+	// Enables hot plug of node compute resources
+	NodeResourceHotPlug featuregate.Feature = "NodeResourceHotPlug"
 )
 
 // defaultVersionedKubernetesFeatureGates consists of all known Kubernetes-specific feature keys with VersionedSpecs.
@@ -1888,6 +1895,10 @@ var defaultVersionedKubernetesFeatureGates = map[featuregate.Feature]featuregate
 	},
 	DisableCPUQuotaWithExclusiveCPUs: {
 		{Version: version.MustParse("1.33"), Default: true, PreRelease: featuregate.Beta},
+	},
+
+	NodeResourceHotPlug: {
+		{Version: version.MustParse("1.33"), Default: false, PreRelease: featuregate.Alpha},
 	},
 }
 

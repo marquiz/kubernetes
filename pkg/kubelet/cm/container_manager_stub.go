@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	cadvisorapi "github.com/google/cadvisor/info/v1"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 
@@ -201,6 +203,10 @@ func (cm *containerManagerStub) PodHasExclusiveCPUs(pod *v1.Pod) bool {
 
 func (cm *containerManagerStub) ContainerHasExclusiveCPUs(pod *v1.Pod, container *v1.Container) bool {
 	return false
+}
+
+func (cm *containerManagerStub) ResyncComponents(_ *cadvisorapi.MachineInfo) error {
+	return nil
 }
 
 func NewStubContainerManager() ContainerManager {

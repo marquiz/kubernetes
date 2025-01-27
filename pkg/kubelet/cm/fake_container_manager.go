@@ -20,6 +20,8 @@ import (
 	"context"
 	"sync"
 
+	cadvisorapi "github.com/google/cadvisor/info/v1"
+
 	v1 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -275,4 +277,8 @@ func (cm *FakeContainerManager) PodHasExclusiveCPUs(pod *v1.Pod) bool {
 
 func (cm *FakeContainerManager) ContainerHasExclusiveCPUs(pod *v1.Pod, container *v1.Container) bool {
 	return false
+}
+
+func (cm *FakeContainerManager) ResyncComponents(_ *cadvisorapi.MachineInfo) error {
+	return nil
 }

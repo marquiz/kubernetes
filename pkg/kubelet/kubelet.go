@@ -34,6 +34,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"k8s.io/kubernetes/pkg/kubelet/noderesource"
+
 	cadvisorapi "github.com/google/cadvisor/info/v1"
 	inuserns "github.com/moby/sys/userns"
 	"github.com/opencontainers/selinux/go-selinux"
@@ -788,6 +790,7 @@ func NewMainKubelet(kubeCfg *kubeletconfiginternal.KubeletConfiguration,
 		kubeDeps.TracerProvider,
 		tokenManager,
 		getServiceAccount,
+		klet.GetCachedMachineInfo,
 	)
 	if err != nil {
 		return nil, err
@@ -1059,6 +1062,9 @@ func NewMainKubelet(kubeCfg *kubeletconfiginternal.KubeletConfiguration,
 			return nil, fmt.Errorf("create health checker: %w", err)
 		}
 	}
+
+	klet.nodeResourceManager = noderesource.NewNodeResourceManager(klet, klet.cadvisor)
+
 	return klet, nil
 }
 
@@ -1445,6 +1451,8 @@ type Kubelet struct {
 
 	// flagz is the Reader interface to get flags for flagz page.
 	flagz flagz.Reader
+
+	nodeResourceManager noderesource.Manager
 }
 
 // ListPodStats is delegated to StatsProvider, which implements stats.Provider interface
@@ -1802,6 +1810,10 @@ func (kl *Kubelet) Run(updates <-chan kubetypes.PodUpdate) {
 
 	if utilfeature.DefaultFeatureGate.Enabled(features.SystemdWatchdog) {
 		kl.healthChecker.Start()
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(features.NodeResourceHotPlug) {
+		kl.nodeResourceManager.Start()
 	}
 
 	kl.syncLoop(ctx, updates, kl)
@@ -2589,7 +2601,12 @@ func (kl *Kubelet) syncLoopIteration(ctx context.Context, configCh <-chan kubety
 			// We do not apply the optimization by updating the status directly, but can do it later
 			handler.HandlePodSyncs(pods)
 		}
-
+	case machineInfo := <-kl.nodeResourceManager.MachineInfo():
+		kl.setCachedMachineInfo(machineInfo)
+		// Resync the resource managers
+		if err := kl.containerManager.ResyncComponents(machineInfo); err != nil {
+			klog.ErrorS(err, "Failed to resync resource managers with machine info update")
+		}
 	case <-housekeepingCh:
 		if !kl.sourcesReady.AllReady() {
 			// If the sources aren't ready or volume manager has not yet synced the states,
