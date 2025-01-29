@@ -47,6 +47,7 @@ import (
 	v1qos "k8s.io/kubernetes/pkg/apis/core/v1/helper/qos"
 	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/tainttoleration"
 	utilfs "k8s.io/kubernetes/pkg/util/filesystem"
+	cpuset "k8s.io/utils/cpuset"
 	netutils "k8s.io/utils/net"
 	"k8s.io/utils/ptr"
 
@@ -88,6 +89,7 @@ import (
 	kubeletcertificate "k8s.io/kubernetes/pkg/kubelet/certificate"
 	"k8s.io/kubernetes/pkg/kubelet/clustertrustbundle"
 	"k8s.io/kubernetes/pkg/kubelet/cm"
+	"k8s.io/kubernetes/pkg/kubelet/cm/cpumanager/topology"
 	"k8s.io/kubernetes/pkg/kubelet/cm/topologymanager"
 	"k8s.io/kubernetes/pkg/kubelet/config"
 	"k8s.io/kubernetes/pkg/kubelet/configmap"
@@ -670,6 +672,12 @@ func NewMainKubelet(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: maybe move this check inside container manager itself
+	if err := checkReservedCPUs(machineInfo, kubeDeps.ContainerManager.GetNodeConfig().NodeAllocatableConfig.ReservedSystemCPUs); err != nil {
+		return nil, err
+	}
+
 	// Avoid collector collects it as a timestamped metric
 	// See PR #95210 and #97006 for more details.
 	machineInfo.Timestamp = time.Time{}
@@ -1091,6 +1099,19 @@ func NewMainKubelet(ctx context.Context,
 	klet.setNodeStatusFuncs = klet.defaultNodeStatusFuncs()
 
 	return klet, nil
+}
+
+// checkReservedCPUs verifies that the reserved-cpus list (if specified) is a subset of the online-cpus list.
+func checkReservedCPUs(machineInfo *cadvisorapi.MachineInfo, cpus cpuset.CPUSet) error {
+	topo, err := topology.Discover(machineInfo)
+	if err != nil {
+		return fmt.Errorf("unable to discover CPU topology info: %s", err)
+	}
+	allCPUSet := topo.CPUDetails.CPUs()
+	if !cpus.IsSubsetOf(allCPUSet) {
+		return fmt.Errorf("reserved-cpus: %s is not a subset of online-cpus: %s", cpus.String(), allCPUSet.String())
+	}
+	return nil
 }
 
 type serviceLister interface {
