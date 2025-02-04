@@ -41,6 +41,8 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 	"go.opentelemetry.io/otel/trace"
+	grpccodes "google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
 
 	"k8s.io/client-go/informers"
 	"k8s.io/mount-utils"
@@ -670,6 +672,21 @@ func NewMainKubelet(kubeCfg *kubeletconfiginternal.KubeletConfiguration,
 		klet.configMapManager = configMapManager
 	}
 
+	if utilfeature.DefaultFeatureGate.Enabled(features.KubeletCRIResourceDiscovery) {
+		klog.Info("Starting watch for dynamic runtime config")
+		initialSyncChan := make(chan struct{})
+		errChan := make(chan error)
+		go klet.watchDynamicRuntimeConfig(kubeDeps.RemoteRuntimeService, initialSyncChan, errChan)
+		select {
+		case err := <-errChan:
+			klog.ErrorS(err, "Failed to watch dynamic runtime config, falling back to cAdvisor. CRI runtime should be updated to a version that supports this feature")
+		case <-initialSyncChan:
+			klog.InfoS("Received initial dynamic runtime config from CRI")
+		case <-time.After(30 * time.Second):
+			return nil, fmt.Errorf("timed out getting dynamic runtime config from CRI")
+		}
+	}
+
 	machineInfo, err := klet.cadvisor.MachineInfo()
 	if err != nil {
 		return nil, err
@@ -1068,6 +1085,48 @@ func NewMainKubelet(kubeCfg *kubeletconfiginternal.KubeletConfiguration,
 		}
 	}
 	return klet, nil
+}
+
+func (kl *Kubelet) watchDynamicRuntimeConfig(rs internalapi.RuntimeService, syncChan chan struct{}, errChan chan error) {
+	runtimConfigChan := make(chan *runtimeapi.DynamicRuntimeConfigResponse, 1000)
+
+	go func() {
+		for i := 0; ; i++ {
+			err := rs.GetDynamicRuntimeConfig(runtimConfigChan)
+			klog.ErrorS(err, "GetDynamicRuntimeConfig returned")
+			if err != nil {
+				s, ok := grpcstatus.FromError(err)
+				// Tolerate a few transient (not-unimplemented) errors
+				if (ok && s.Code() == grpccodes.Unimplemented) || i > 3 {
+					select {
+					case errChan <- err:
+					default:
+					}
+				}
+			}
+			time.Sleep(2 * time.Second)
+		}
+	}()
+
+	once := sync.Once{}
+	for {
+		select {
+		case rc := <-runtimConfigChan:
+			mi, err := dynamicRuntimeConfigToMachineInfo(rc)
+			if err != nil {
+				klog.ErrorS(err, "failed to convert resource topology to machine info")
+				continue
+			}
+			kl.cadvisor.SetMachineInfo(mi)
+			klog.InfoS("Received dynamic runtime config from CRI")
+			once.Do(func() {
+				close(syncChan)
+			})
+			// Return to prevent machine info to be dynamically updated afterwards
+			// TODO: remove the return when integrating with resource hotplug implementation
+			return
+		}
+	}
 }
 
 // checkReservedCPUs verifies that the reserved-cpus list (if specified) is a subset of the online-cpus list.
