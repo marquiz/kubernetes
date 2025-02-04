@@ -679,6 +679,17 @@ func NewMainKubelet(kubeCfg *kubeletconfiginternal.KubeletConfiguration,
 		klet.configMapManager = configMapManager
 	}
 
+	if utilfeature.DefaultFeatureGate.Enabled(features.KubeletCRIResourceDiscovery) {
+		klog.Info("Fetching machine info via CRI")
+		mi, err := getMachineInfoFromCRI(kubeDeps.RemoteRuntimeService)
+		if err != nil {
+			return nil, err
+		}
+		klog.InfoS("Fetched machine info from CRI", "machineInfo", mi)
+
+		klet.cadvisor.SetMachineInfo(mi)
+	}
+
 	machineInfo, err := klet.cadvisor.MachineInfo()
 	if err != nil {
 		return nil, err
@@ -1075,6 +1086,29 @@ func NewMainKubelet(kubeCfg *kubeletconfiginternal.KubeletConfiguration,
 		}
 	}
 	return klet, nil
+}
+
+func getMachineInfoFromCRI(rs internalapi.RuntimeService) (*cadvisorapi.MachineInfo, error) {
+	runtimConfigChan := make(chan *runtimeapi.DynamicRuntimeConfigResponse, 1000)
+	go func() {
+		err := rs.GetDynamicRuntimeConfig(runtimConfigChan)
+		if err != nil {
+			fmt.Println("error GetDynamicRuntimeConfig", err)
+		}
+	}()
+
+	for {
+		select {
+		case rc := <-runtimConfigChan:
+			mi, err := dynamicRuntimeConfigToMachineInfo(rc)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert resource topology to machine info: %w", err)
+			}
+			return mi, nil
+		case <-time.After(time.Minute * 5):
+			return nil, fmt.Errorf("timed out fetching machine info from CRI")
+		}
+	}
 }
 
 // checkReservedCPUs verifies that the reserved-cpus list (if specified) is a subset of the online-cpus list.
