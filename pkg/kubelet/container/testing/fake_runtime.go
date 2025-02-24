@@ -545,3 +545,11 @@ func (f *FakeRuntime) GetContainerSwapBehavior(pod *v1.Pod, container *v1.Contai
 	}
 	return kubetypes.NoSwap
 }
+
+func (f *FakeRuntime) UpdateContainerResources(_ *v1.Pod, _ *v1.Container, _ kubecontainer.ContainerID) error {
+	f.Lock()
+	defer f.Unlock()
+
+	f.CalledFunctions = append(f.CalledFunctions, "UpdateContainerResources")
+	return nil
+}
