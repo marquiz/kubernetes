@@ -1340,6 +1340,9 @@ func TestReadyCondition(t *testing.T) {
 			nodeShutdownErrorsFunc := func() error {
 				return tc.nodeShutdownManagerErrors
 			}
+			nodeResourceManagerErrorsFunc := func() error {
+				return nil
+			}
 			events := []testEvent{}
 			recordEventFunc := func(eventType, event string) {
 				events = append(events, testEvent{
@@ -1348,7 +1351,7 @@ func TestReadyCondition(t *testing.T) {
 				})
 			}
 			// construct setter
-			setter := ReadyCondition(nowFunc, runtimeErrorsFunc, networkErrorsFunc, storageErrorsFunc, cmStatusFunc, nodeShutdownErrorsFunc, recordEventFunc, !tc.disableLocalStorageCapacityIsolation)
+			setter := ReadyCondition(nowFunc, runtimeErrorsFunc, networkErrorsFunc, storageErrorsFunc, cmStatusFunc, nodeShutdownErrorsFunc, nodeResourceManagerErrorsFunc, recordEventFunc, !tc.disableLocalStorageCapacityIsolation)
 			// call setter on node
 			if err := setter(ctx, tc.node); err != nil {
 				t.Fatalf("unexpected error: %v", err)
