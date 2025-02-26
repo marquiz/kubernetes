@@ -1049,6 +1049,12 @@ func NewMainKubelet(kubeCfg *kubeletconfiginternal.KubeletConfiguration,
 	// people can see how it was configured.
 	klet.kubeletConfiguration = *kubeCfg
 
+	klet.nodeResourceManager = noderesource.NewNodeResourceManager(&noderesource.Config{
+		Host:               klet,
+		CAdvisor:           klet.cadvisor,
+		SyncNodeStatusFunc: klet.syncNodeStatus,
+	})
+
 	// Generating the status funcs should be the last thing we do,
 	// since this relies on the rest of the Kubelet having been constructed.
 	klet.setNodeStatusFuncs = klet.defaultNodeStatusFuncs()
@@ -1062,13 +1068,6 @@ func NewMainKubelet(kubeCfg *kubeletconfiginternal.KubeletConfiguration,
 			return nil, fmt.Errorf("create health checker: %w", err)
 		}
 	}
-
-	klet.nodeResourceManager = noderesource.NewNodeResourceManager(&noderesource.Config{
-		Host:               klet,
-		CAdvisor:           klet.cadvisor,
-		SyncNodeStatusFunc: klet.syncNodeStatus,
-	})
-
 	return klet, nil
 }
 
@@ -2613,7 +2612,6 @@ func (kl *Kubelet) syncLoopIteration(ctx context.Context, configCh <-chan kubety
 				klog.ErrorS(err, "Kubelet failed to retrieve running pods from runtime")
 				return err
 			}
-			klog.InfoS("Running pods returned by runtime", "RuntimePods", klog.KObjSlice(runningPods))
 
 			runningPodsByUID := make(map[types.UID]*kubecontainer.Pod)
 			for _, pod := range runningPods {
@@ -2622,7 +2620,6 @@ func (kl *Kubelet) syncLoopIteration(ctx context.Context, configCh <-chan kubety
 
 			// Fetch all the allocated pods.
 			allocatedPods := kl.getAllocatedPods()
-			klog.InfoS("Allocated pods", "AllocatedPods", klog.KObjSlice(allocatedPods))
 
 			for _, pod := range allocatedPods {
 				runningPod, knownPod := runningPodsByUID[pod.UID]
@@ -2632,31 +2629,16 @@ func (kl *Kubelet) syncLoopIteration(ctx context.Context, configCh <-chan kubety
 				}
 
 				for _, container := range pod.Spec.Containers {
-
-					// Calculate update OOMScoreAdj and Swap limit.
-					//containerMemReq := container.Resources.Requests.Memory().Value()
-					//
-					//oomScoreAdjust := 1000 - (1000*containerMemReq)/int64(machineInfo.MemoryCapacity)
-					//containerResources := &runtimeapi.ContainerResources{
-					//	Linux: &runtimeapi.LinuxContainerResources{
-					//		OomScoreAdj: oomScoreAdjust,
-					//	},
-					//}
-					//err := kl.runtimeService.UpdateContainerResources(ctx, containerDetails.ID.ID, containerResources)
-					//if err != nil {
-					//	klog.ErrorS(err, "UpdateContainerResources failed", "container", container.Name)
-					//}
-
 					containerDetails := runningPod.FindContainerByName(container.Name)
 					if containerDetails == nil {
 						klog.InfoS("Skipping resizing container as not able to find its ID", "container", container.Name)
 						continue
 					}
-
 					// Update the container resource.
 					err = kl.containerRuntime.UpdateContainerResources(pod, &container, containerDetails.ID)
 					if err != nil {
 						klog.ErrorS(err, "UpdateContainerResources failed", "container", container.Name)
+						return err
 					}
 				}
 			}
@@ -2666,13 +2648,17 @@ func (kl *Kubelet) syncLoopIteration(ctx context.Context, configCh <-chan kubety
 		// Resize the containers.
 		klog.InfoS("Resizing containers because of change in MachineInfo")
 		if err := resizeContainers(); err != nil {
-			klog.ErrorS(err, "Failed to resize containers with machine info update")
+			klog.ErrorS(err, "Failed to resize containers with change in machine info")
+			kl.recorder.Eventf(kl.nodeRef, v1.EventTypeWarning, events.FailedNodeResize, err.Error())
+			break
 		}
 
 		// Resync the resource managers.
 		klog.InfoS("ResyncComponents resource managers because of change in MachineInfo")
 		if err := kl.containerManager.ResyncComponents(machineInfo); err != nil {
 			klog.ErrorS(err, "Failed to resync resource managers with machine info update")
+			kl.recorder.Eventf(kl.nodeRef, v1.EventTypeWarning, events.FailedNodeResize, err.Error())
+			break
 		}
 
 		// Update the cached MachineInfo.
