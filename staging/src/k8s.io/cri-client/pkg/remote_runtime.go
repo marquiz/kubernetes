@@ -912,3 +912,28 @@ func (r *remoteRuntimeService) RuntimeConfig(ctx context.Context) (*runtimeapi.R
 
 	return resp, nil
 }
+
+// GetDynamicRuntimeConfig gets runtime configurations from the CRI runtime.
+func (r *remoteRuntimeService) GetDynamicRuntimeConfig(runtimeConfigCh chan *runtimeapi.DynamicRuntimeConfigResponse) error {
+	runtimeConfigStreamingClient, err := r.runtimeClient.GetDynamicRuntimeConfig(context.Background(), &runtimeapi.DynamicRuntimeConfigRequest{})
+	if err != nil {
+		r.logErr(err, "GetDynamicRuntimeConfig failed to get streaming client")
+		return err
+	}
+
+	for {
+		resp, err := runtimeConfigStreamingClient.Recv()
+		if err == io.EOF {
+			r.logErr(err, "dynamic runtime config stream is closed")
+			return err
+		}
+		if err != nil {
+			r.logErr(err, "failed to receive dynamic runtime config")
+			return err
+		}
+		if resp != nil {
+			runtimeConfigCh <- resp
+			r.log(0, "dynamic runtime config is received", "resp", resp)
+		}
+	}
+}
