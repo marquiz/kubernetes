@@ -82,6 +82,7 @@ const (
 	RuntimeService_ListPodSandboxMetrics_FullMethodName     = "/runtime.v1.RuntimeService/ListPodSandboxMetrics"
 	RuntimeService_RuntimeConfig_FullMethodName             = "/runtime.v1.RuntimeService/RuntimeConfig"
 	RuntimeService_UpdatePodSandboxResources_FullMethodName = "/runtime.v1.RuntimeService/UpdatePodSandboxResources"
+	RuntimeService_GetDynamicRuntimeConfig_FullMethodName   = "/runtime.v1.RuntimeService/GetDynamicRuntimeConfig"
 )
 
 // RuntimeServiceClient is the client API for RuntimeService service.
@@ -192,6 +193,9 @@ type RuntimeServiceClient interface {
 	// This request is treated as best effort, and failure will not block the
 	// Kubelet with proceeding with a resize.
 	UpdatePodSandboxResources(ctx context.Context, in *UpdatePodSandboxResourcesRequest, opts ...grpc.CallOption) (*UpdatePodSandboxResourcesResponse, error)
+	// GetDynamicRuntimeConfig is a streaming interface for receiving dynamically
+	// changing runtime and node configuration
+	GetDynamicRuntimeConfig(ctx context.Context, in *DynamicRuntimeConfigRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DynamicRuntimeConfigResponse], error)
 }
 
 type runtimeServiceClient struct {
@@ -511,6 +515,25 @@ func (c *runtimeServiceClient) UpdatePodSandboxResources(ctx context.Context, in
 	return out, nil
 }
 
+func (c *runtimeServiceClient) GetDynamicRuntimeConfig(ctx context.Context, in *DynamicRuntimeConfigRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DynamicRuntimeConfigResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &RuntimeService_ServiceDesc.Streams[1], RuntimeService_GetDynamicRuntimeConfig_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[DynamicRuntimeConfigRequest, DynamicRuntimeConfigResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type RuntimeService_GetDynamicRuntimeConfigClient = grpc.ServerStreamingClient[DynamicRuntimeConfigResponse]
+
 // RuntimeServiceServer is the server API for RuntimeService service.
 // All implementations must embed UnimplementedRuntimeServiceServer
 // for forward compatibility.
@@ -619,6 +642,9 @@ type RuntimeServiceServer interface {
 	// This request is treated as best effort, and failure will not block the
 	// Kubelet with proceeding with a resize.
 	UpdatePodSandboxResources(context.Context, *UpdatePodSandboxResourcesRequest) (*UpdatePodSandboxResourcesResponse, error)
+	// GetDynamicRuntimeConfig is a streaming interface for receiving dynamically
+	// changing runtime and node configuration
+	GetDynamicRuntimeConfig(*DynamicRuntimeConfigRequest, grpc.ServerStreamingServer[DynamicRuntimeConfigResponse]) error
 	mustEmbedUnimplementedRuntimeServiceServer()
 }
 
@@ -718,6 +744,9 @@ func (UnimplementedRuntimeServiceServer) RuntimeConfig(context.Context, *Runtime
 }
 func (UnimplementedRuntimeServiceServer) UpdatePodSandboxResources(context.Context, *UpdatePodSandboxResourcesRequest) (*UpdatePodSandboxResourcesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePodSandboxResources not implemented")
+}
+func (UnimplementedRuntimeServiceServer) GetDynamicRuntimeConfig(*DynamicRuntimeConfigRequest, grpc.ServerStreamingServer[DynamicRuntimeConfigResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method GetDynamicRuntimeConfig not implemented")
 }
 func (UnimplementedRuntimeServiceServer) mustEmbedUnimplementedRuntimeServiceServer() {}
 func (UnimplementedRuntimeServiceServer) testEmbeddedByValue()                        {}
@@ -1273,6 +1302,17 @@ func _RuntimeService_UpdatePodSandboxResources_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RuntimeService_GetDynamicRuntimeConfig_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DynamicRuntimeConfigRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RuntimeServiceServer).GetDynamicRuntimeConfig(m, &grpc.GenericServerStream[DynamicRuntimeConfigRequest, DynamicRuntimeConfigResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type RuntimeService_GetDynamicRuntimeConfigServer = grpc.ServerStreamingServer[DynamicRuntimeConfigResponse]
+
 // RuntimeService_ServiceDesc is the grpc.ServiceDesc for RuntimeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1401,6 +1441,11 @@ var RuntimeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "GetContainerEvents",
 			Handler:       _RuntimeService_GetContainerEvents_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetDynamicRuntimeConfig",
+			Handler:       _RuntimeService_GetDynamicRuntimeConfig_Handler,
 			ServerStreams: true,
 		},
 	},
