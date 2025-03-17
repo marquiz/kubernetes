@@ -64,6 +64,7 @@ const (
 	ListPodSandboxMetrics     = "ListPodSandboxMetrics"
 	RuntimeConfig             = "RuntimeConfig"
 	UpdatePodSandboxResources = "UpdatePodSandboxResources"
+	GetDynamicRuntimeConfig   = "GetDynamicRuntimeConfig"
 )
 
 // AddInjector inject the error or delay to the next call to the RuntimeService.
@@ -530,4 +531,13 @@ func (p *RemoteRuntime) RuntimeConfig(ctx context.Context, req *runtimeapi.Runti
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (p *RemoteRuntime) GetDynamicRuntimeConfig(*runtimeapi.DynamicRuntimeConfigRequest, runtimeapi.RuntimeService_GetDynamicRuntimeConfigServer) error {
+	if err := p.runInjectors(GetDynamicRuntimeConfig); err != nil {
+		return err
+	}
+
+	// TODO: add working implementation
+	return nil
 }

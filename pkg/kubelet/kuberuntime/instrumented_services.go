@@ -60,6 +60,15 @@ func recordError(operation string, err error) {
 	}
 }
 
+func (in instrumentedRuntimeService) GetDynamicRuntimeConfig(runtimeConfigCh chan *runtimeapi.DynamicRuntimeConfigResponse) error {
+	const operation = "get_dynamic_runtime_config"
+	defer recordOperation(operation, time.Now())
+
+	err := in.service.GetDynamicRuntimeConfig(runtimeConfigCh)
+	recordError(operation, err)
+	return err
+}
+
 func (in instrumentedRuntimeService) Version(ctx context.Context, apiVersion string) (*runtimeapi.VersionResponse, error) {
 	const operation = "version"
 	defer recordOperation(operation, time.Now())

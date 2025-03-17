@@ -123,6 +123,8 @@ type RuntimeService interface {
 	Status(ctx context.Context, verbose bool) (*runtimeapi.StatusResponse, error)
 	// RuntimeConfig returns the configuration information of the runtime.
 	RuntimeConfig(ctx context.Context) (*runtimeapi.RuntimeConfigResponse, error)
+	// GetDynamicRuntimeConfig gets runtime configurations from the CRI runtime
+	GetDynamicRuntimeConfig(runtimeConfigCh chan *runtimeapi.DynamicRuntimeConfigResponse) error
 }
 
 // ImageManagerService interface should be implemented by a container image

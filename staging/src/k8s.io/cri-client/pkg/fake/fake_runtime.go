@@ -371,3 +371,7 @@ func (f *RemoteRuntime) RuntimeConfig(ctx context.Context, req *kubeapi.RuntimeC
 func (f *RemoteRuntime) UpdatePodSandboxResources(ctx context.Context, req *kubeapi.UpdatePodSandboxResourcesRequest) (*kubeapi.UpdatePodSandboxResourcesResponse, error) {
 	return f.RuntimeService.UpdatePodSandboxResources(ctx, req)
 }
+
+func (f *RemoteRuntime) GetDynamicRuntimeConfig(*kubeapi.DynamicRuntimeConfigRequest, kubeapi.RuntimeService_GetDynamicRuntimeConfigServer) error {
+	return nil
+}

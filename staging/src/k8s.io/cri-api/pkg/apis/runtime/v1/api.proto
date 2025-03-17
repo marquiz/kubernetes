@@ -21,6 +21,7 @@ package runtime.v1;
 option go_package = "k8s.io/cri-api/pkg/apis/runtime/v1";
 
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "k8s.io/apimachinery/pkg/api/resource/generated.proto";
 
 option (gogoproto.goproto_stringer_all) = false;
 option (gogoproto.stringer_all) =  true;
@@ -147,6 +148,10 @@ service RuntimeService {
     // This request is treated as best effort, and failure will not block the
     // Kubelet with proceeding with a resize.
     rpc UpdatePodSandboxResources(UpdatePodSandboxResourcesRequest) returns (UpdatePodSandboxResourcesResponse) {}
+
+    // GetDynamicRuntimeConfig is a streaming interface for receiving dynamically
+    // changing runtime and node configuration
+    rpc GetDynamicRuntimeConfig(DynamicRuntimeConfigRequest) returns (stream DynamicRuntimeConfigResponse) {}
 }
 
 // ImageService defines the public APIs for managing images.
@@ -2126,3 +2131,45 @@ message UpdatePodSandboxResourcesRequest {
 }
 
 message UpdatePodSandboxResourcesResponse {}
+
+message DynamicRuntimeConfigRequest{}
+
+message DynamicRuntimeConfigResponse {
+    ResourceTopology resource_topology = 1;
+    map<string, string> system_attributes = 2;
+}
+
+message ResourceTopology {
+    repeated ResourceCpuInfo cpu_info = 1;
+    repeated ResourceNumaNodeInfo numa_node_info = 2;
+    ResourceSwapInfo swap_info = 3;
+}
+
+// ResourceCpuInfo provides information about on logical CPU
+message ResourceCpuInfo {
+    int64 id = 1;
+    int64 core_id = 2;
+    // cpu_group marks desired cpu grouping between socket (package) and core levels
+    int64 cpu_group_id = 3;
+    int64 socket_id = 4;
+}
+
+message ResourceNumaNodeInfo {
+    int64 id = 1;
+    // resources is a list of resources that are local to this numa node,
+    // expected to contain only memory or hugepages, other resources are ignored
+    repeated ResourceTopologyResourceInfo resources = 2;
+    // distance is the distance vector, i.e. the distance from this node to all other nodes
+    repeated int64 distance = 3;
+    // cpu_ids is a list of logical CPU IDs that are local to this numa node
+    repeated int64 cpu_ids = 4;
+}
+
+message ResourceSwapInfo {
+    k8s.io.apimachinery.pkg.api.resource.Quantity capacity = 1;
+}
+
+message ResourceTopologyResourceInfo {
+    string name = 1;
+    k8s.io.apimachinery.pkg.api.resource.Quantity capacity = 2;
+}
