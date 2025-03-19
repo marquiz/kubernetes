@@ -1153,9 +1153,10 @@ func (kl *Kubelet) watchDynamicRuntimeConfig(rs internalapi.RuntimeService, sync
 			once.Do(func() {
 				close(syncChan)
 			})
-			// Return to prevent machine info to be dynamically updated afterwards
-			// TODO: remove the return when integrating with resource hotplug implementation
-			return
+			if !utilfeature.DefaultFeatureGate.Enabled(features.NodeResourceHotPlug) {
+				// Return to prevent machine info to be dynamically updated afterwards
+				return
+			}
 		}
 	}
 }
