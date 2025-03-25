@@ -53,3 +53,21 @@ const (
 	// LogTagDelimiter is the delimiter for different log tags.
 	LogTagDelimiter = ":"
 )
+
+// Resource topology
+const (
+	ResourceTopologyZoneCore       = "Core"
+	ResourceTopologyZoneCacheGroup = "CacheGroup"
+	ResourceTopologyZonePackage    = "Package"
+	ResourceTopologyZoneNUMANode   = "NUMANode"
+
+	// Attribute name for the CPU IDs of a zone that contains CPU resources.
+	ResourceTopologyAttributeCPUIDs = "cpu-ids"
+
+	// Attribute names to identify a machine. Used to replace the
+	// MacineID, BootID and SystemUUID fields of the cAdvisor
+	// MachineInfo.
+	ResourceTopologyAttributeMachineID  = "machine-id"
+	ResourceTopologyAttributeBootID     = "boot-id"
+	ResourceTopologyAttributeSystemUUID = "system-uuid"
+)

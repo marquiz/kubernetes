@@ -20,6 +20,8 @@ syntax = "proto3";
 package runtime.v1;
 option go_package = "k8s.io/cri-api/pkg/apis/runtime/v1";
 
+import "k8s.io/apimachinery/pkg/api/resource/generated.proto";
+
 // Runtime service defines the public APIs for remote container runtimes
 service RuntimeService {
     // Version returns the runtime name, runtime version, and runtime API version.
@@ -137,6 +139,10 @@ service RuntimeService {
     // This request is treated as best effort, and failure will not block the
     // Kubelet with proceeding with a resize.
     rpc UpdatePodSandboxResources(UpdatePodSandboxResourcesRequest) returns (UpdatePodSandboxResourcesResponse) {}
+
+    // GetDynamicRuntimeConfig is a streaming interface for receiving dynamically
+    // changing runtime and node configuration
+    rpc GetDynamicRuntimeConfig(DynamicRuntimeConfigRequest) returns (stream DynamicRuntimeConfigResponse) {}
 }
 
 // ImageService defines the public APIs for managing images.
@@ -2105,6 +2111,7 @@ enum CgroupDriver {
     CGROUPFS = 1;
 }
 
+
 message UpdatePodSandboxResourcesRequest {
     // ID of the PodSandbox to update.
     string pod_sandbox_id = 1;
@@ -2116,3 +2123,32 @@ message UpdatePodSandboxResourcesRequest {
 }
 
 message UpdatePodSandboxResourcesResponse {}
+
+message DynamicRuntimeConfigRequest{}
+
+message DynamicRuntimeConfigResponse {
+    ResourceTopology resource_topology = 1;
+}
+
+message ResourceTopology {
+    repeated ResourceTopologyZone zones = 1;
+}
+
+message ResourceTopologyZone {
+    string name = 1;
+    string type = 2;
+    string parent = 3;
+    repeated ResourceTopologyCost costs = 4;
+    map<string, string> attributes = 5;
+    repeated ResourceTopologyResourceInfo resources = 6;
+}
+
+message ResourceTopologyCost {
+    string name = 1;
+    uint32 value = 2;
+}
+
+message ResourceTopologyResourceInfo {
+    string name = 1;
+    k8s.io.apimachinery.pkg.api.resource.Quantity capacity = 2;
+}

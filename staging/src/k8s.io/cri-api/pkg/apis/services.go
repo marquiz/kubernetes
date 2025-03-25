@@ -125,6 +125,8 @@ type RuntimeService interface {
 	RuntimeConfig(ctx context.Context) (*runtimeapi.RuntimeConfigResponse, error)
 	// Close will shutdown the internal gRPC client connection.
 	Close() error
+	// GetDynamicRuntimeConfig gets runtime configurations from the CRI runtime
+	GetDynamicRuntimeConfig(runtimeConfigCh chan *runtimeapi.DynamicRuntimeConfigResponse) error
 }
 
 // ImageManagerService interface should be implemented by a container image
