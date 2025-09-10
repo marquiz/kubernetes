@@ -42,7 +42,7 @@ func (m *fakeManager) Start(ctx context.Context, activePods ActivePodsFunc, sour
 func (m *fakeManager) Policy(ctx context.Context) Policy {
 	logger := klog.FromContext(ctx)
 	logger.Info("Policy()")
-	return NewPolicyNone(ctx)
+	return NewPolicyNone()
 }
 
 func (m *fakeManager) Allocate(pod *v1.Pod, container *v1.Container) error {

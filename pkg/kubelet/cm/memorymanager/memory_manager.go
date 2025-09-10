@@ -132,13 +132,13 @@ type manager struct {
 var _ Manager = &manager{}
 
 // NewManager returns new instance of the memory manager
-func NewManager(ctx context.Context, policyName string, machineInfo *cadvisorapi.MachineInfo, nodeAllocatableReservation v1.ResourceList, reservedMemory []kubeletconfig.MemoryReservation, stateFileDirectory string, affinity topologymanager.Store) (Manager, error) {
+func NewManager(policyName string, machineInfo *cadvisorapi.MachineInfo, nodeAllocatableReservation v1.ResourceList, reservedMemory []kubeletconfig.MemoryReservation, stateFileDirectory string, affinity topologymanager.Store) (Manager, error) {
 	var policy Policy
 
 	switch policyType(policyName) {
 
 	case policyTypeNone:
-		policy = NewPolicyNone(ctx)
+		policy = NewPolicyNone()
 
 	case PolicyTypeStatic:
 		if runtime.GOOS == "windows" {
@@ -150,7 +150,7 @@ func NewManager(ctx context.Context, policyName string, machineInfo *cadvisorapi
 			return nil, err
 		}
 
-		policy, err = NewPolicyStatic(ctx, machineInfo, systemReserved, affinity)
+		policy, err = NewPolicyStatic(machineInfo, systemReserved, affinity)
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +161,7 @@ func NewManager(ctx context.Context, policyName string, machineInfo *cadvisorapi
 			if err != nil {
 				return nil, err
 			}
-			policy, err = NewPolicyBestEffort(ctx, machineInfo, systemReserved, affinity)
+			policy, err = NewPolicyBestEffort(machineInfo, systemReserved, affinity)
 			if err != nil {
 				return nil, err
 			}
