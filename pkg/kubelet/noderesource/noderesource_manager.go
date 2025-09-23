@@ -86,7 +86,6 @@ func (m *manager) Start() {
 	// starting to fetch machine info from cadvisor cache.
 	klog.Info("Starting node resource manager")
 	go wait.Forever(func() {
-		klog.Info("Fetching machine info")
 		var machineInfoDecreased bool
 		machineInfo, err := m.cadvisor.MachineInfo()
 		if err != nil {
@@ -103,22 +102,18 @@ func (m *manager) Start() {
 		if isNodeCapacityIncreased(cachedMachineInfo, machineInfo) {
 			klog.Info("Node capacity increased")
 			m.machineInfoChan <- machineInfo
-		} else if isNodeCapacityDecreased(cachedMachineInfo, machineInfo) {
-			klog.Info("Node capacity decreased, Setting node as not ready")
+		} else if IsNodeCapacityDecreased(cachedMachineInfo, machineInfo) {
+			klog.Info("Node capacity decreased")
 			// set node not ready
 			machineInfoDecreased = true
+			m.machineInfoChan <- machineInfo
 		}
 		// If the machine info decreased we need to set node to not ready
 		// Once the node is set to not ready, Later again if machine info back to valid state
 		// we should make node as ready.
 		m.machineInfoDecreaseMutex.Lock()
-		previousMachineState := m.machineInfoDecreased
 		m.machineInfoDecreased = machineInfoDecreased
 		m.machineInfoDecreaseMutex.Unlock()
-		if previousMachineState || machineInfoDecreased {
-			klog.Info("Updating node status from node resource manager")
-			m.syncNodeStatus()
-		}
 
 		// cadvisor updates its cache in `update_machine_info_interval` defaulted to 5 minutes.
 	}, 1*time.Second)
@@ -138,7 +133,8 @@ func (m *manager) NodeCapacityDecreasedStatus() error {
 			m.cachedMachineInfo.NumCores, m.cachedMachineInfo.MemoryCapacity,
 			m.machineInfo.NumCores, m.machineInfo.MemoryCapacity)
 		klog.ErrorS(errMessage, "Node capacity decreased")
-		return fmt.Errorf("node capacity has decreased %s", errMessage)
+		// HACK (hot-unplug): don't set node status to not ready
+		//return fmt.Errorf("node capacity has decreased %s", errMessage)
 	}
 	return nil
 }
@@ -155,7 +151,7 @@ func (m *managerStub) NodeCapacityDecreasedStatus() error {
 	return nil
 }
 
-func isNodeCapacityDecreased(currentMachineInfo, newMachineInfo *cadvisorapi.MachineInfo) bool {
+func IsNodeCapacityDecreased(currentMachineInfo, newMachineInfo *cadvisorapi.MachineInfo) bool {
 	if newMachineInfo.MemoryCapacity < currentMachineInfo.MemoryCapacity ||
 		newMachineInfo.NumCores < currentMachineInfo.NumCores {
 		return true

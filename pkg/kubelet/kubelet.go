@@ -2670,14 +2670,6 @@ func (kl *Kubelet) syncLoopIteration(ctx context.Context, configCh <-chan kubety
 			return nil
 		}
 
-		// Resize the containers.
-		klog.InfoS("Resizing containers because of change in MachineInfo")
-		if err := resizeContainers(); err != nil {
-			klog.ErrorS(err, "Failed to resize containers with change in machine info")
-			kl.recorder.Eventf(kl.nodeRef, v1.EventTypeWarning, events.FailedNodeResize, err.Error())
-			break
-		}
-
 		// Resync the resource managers.
 		klog.InfoS("ResyncComponents resource managers because of change in MachineInfo")
 		if err := kl.containerManager.ResyncComponents(machineInfo); err != nil {
@@ -2687,7 +2679,25 @@ func (kl *Kubelet) syncLoopIteration(ctx context.Context, configCh <-chan kubety
 		}
 
 		// Update the cached MachineInfo.
+		oldMachineInfo, _ := kl.GetCachedMachineInfo()
 		kl.setCachedMachineInfo(machineInfo)
+		if noderesource.IsNodeCapacityDecreased(oldMachineInfo, machineInfo) {
+			// We need to sync the node status to update the node capacity
+			// observed by the admit handlers.
+			kl.syncNodeStatus()
+			// If the node capacity is decreased, we need to evict pods if the current
+			// usage exceeds the new capacity.
+			klog.InfoS("Node capacity decreased, re-admitting pods")
+			kl.HandleResourceUnplug(kl.getAllocatedPods())
+		}
+
+		// Resize the containers.
+		klog.InfoS("Resizing containers because of change in MachineInfo")
+		if err := resizeContainers(); err != nil {
+			klog.ErrorS(err, "Failed to resize containers with change in machine info")
+			kl.recorder.Eventf(kl.nodeRef, v1.EventTypeWarning, events.FailedNodeResize, err.Error())
+			break
+		}
 
 	case <-housekeepingCh:
 		if !kl.sourcesReady.AllReady() {
@@ -2797,6 +2807,55 @@ func (kl *Kubelet) HandlePodAdditions(pods []*v1.Pod) {
 		}
 		if len(pendingResizes) > 0 {
 			kl.allocationManager.RetryPendingResizes(allocation.TriggerReasonPodsAdded)
+		}
+	}
+}
+
+// HandleResourceUnplug handles the situation when some node resources are
+// removed and pods need to be re-admitted.
+func (kl *Kubelet) HandleResourceUnplug(pods []*v1.Pod) {
+	// TODO: more intelligent sorting, e.g. critical pods first
+	sort.Sort(sliceutils.PodsByCreationTime(pods))
+	admittedPods := []*v1.Pod{}
+	for _, pod := range pods {
+		pod, mirrorPod, wasMirror := kl.podManager.GetPodAndMirrorPod(pod)
+		if wasMirror {
+			if pod == nil {
+				klog.V(2).InfoS("Unable to find pod for mirror pod", "mirrorPod", klog.KObj(mirrorPod), "mirrorPodUID", mirrorPod.UID)
+			}
+			klog.InfoS("Mirror pod unconditionally re-admitted", "pod", klog.KObj(pod))
+			admittedPods = append(admittedPods, pod)
+			continue
+		}
+
+		if !kl.podWorkers.IsPodTerminationRequested(pod.UID) && !podutil.IsPodPhaseTerminal(pod.Status.Phase) {
+			// Check if we can still admit the pod
+			if ok, reason, message := kl.allocationManager.AddPod(admittedPods, pod); !ok {
+				kl.recorder.Eventf(pod, v1.EventTypeWarning, reason, message)
+				kl.podWorkers.UpdatePod(UpdatePodOptions{
+					Pod:        pod,
+					UpdateType: kubetypes.SyncPodKill,
+					KillPodOptions: &KillPodOptions{
+						Evict: true,
+						PodStatusFunc: func(status *v1.PodStatus) {
+							status.Phase = v1.PodFailed
+							status.Reason = reason
+							status.Message = "Pod was rejected after node resource unplug: " + message
+							podutil.UpdatePodCondition(status,
+								&v1.PodCondition{
+									Type:               v1.DisruptionTarget,
+									ObservedGeneration: pod.Generation,
+									Status:             v1.ConditionTrue,
+									Reason:             v1.PodReasonTerminationByKubelet,
+									Message:            message})
+						},
+					},
+				})
+				// TODO: metrics for re-admission rejections(?)
+				continue
+			}
+			klog.InfoS("Pod re-admitted", "pod", klog.KObj(pod))
+			admittedPods = append(admittedPods, pod)
 		}
 	}
 }
