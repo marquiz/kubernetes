@@ -33,6 +33,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"gopkg.in/yaml.v3"
 	"k8s.io/kubernetes/pkg/kubelet/noderesource"
 
 	cadvisorapi "github.com/google/cadvisor/info/v1"
@@ -1159,6 +1160,8 @@ func (kl *Kubelet) watchDynamicRuntimeConfig(rs internalapi.RuntimeService, sync
 			}
 			kl.cadvisor.SetMachineInfo(mi)
 			klog.InfoS("Received dynamic runtime config from CRI")
+			miStr, err := yaml.Marshal(mi)
+			klog.InfoS("MachineInfo from CRI", "info", string(miStr))
 			once.Do(func() {
 				close(syncChan)
 			})
