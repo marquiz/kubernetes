@@ -34,7 +34,7 @@ type none struct{}
 var _ Policy = &none{}
 
 // NewPolicyNone returns new none policy instance
-func NewPolicyNone(ctx context.Context) Policy {
+func NewPolicyNone() Policy {
 	return &none{}
 }
 

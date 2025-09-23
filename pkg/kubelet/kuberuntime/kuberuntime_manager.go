@@ -189,6 +189,9 @@ type kubeGenericRuntimeManager struct {
 	// Swap controller availability check function (Linux only)
 	// Uses sync.OnceValue for lazy initialization
 	getSwapControllerAvailable func() bool
+
+	// getCachedMachineInfo is function to return the latest cached machine info.
+	getCachedMachineInfo func() (*cadvisorapi.MachineInfo, error)
 }
 
 // KubeGenericRuntime is a interface contains interfaces for container runtime and command.
@@ -238,6 +241,7 @@ func NewKubeGenericRuntimeManager(
 	tracerProvider trace.TracerProvider,
 	tokenManager *token.Manager,
 	getServiceAccount plugin.GetServiceAccountFunc,
+	getCachedMachineInfo func() (*cadvisorapi.MachineInfo, error),
 ) (KubeGenericRuntime, []images.PostImageGCHook, error) {
 	logger := klog.FromContext(ctx)
 
@@ -268,6 +272,7 @@ func NewKubeGenericRuntimeManager(
 		getNodeAllocatable:     getNodeAllocatable,
 		memoryThrottlingFactor: memoryThrottlingFactor,
 		podLogsDirectory:       podLogsDirectory,
+		getCachedMachineInfo:   getCachedMachineInfo,
 	}
 
 	// Initialize swap controller availability check with lazy evaluation
@@ -398,7 +403,11 @@ func (m *kubeGenericRuntimeManager) Version(ctx context.Context) (kubecontainer.
 // runtime. Implementation is expected to update this cache periodically.
 // This may be different from the runtime engine's version.
 func (m *kubeGenericRuntimeManager) APIVersion() (kubecontainer.Version, error) {
-	versionObject, err := m.versionCache.Get(m.machineInfo.MachineID)
+	machineInfo := m.machineInfo
+	if m.getCachedMachineInfo != nil {
+		machineInfo, _ = m.getCachedMachineInfo()
+	}
+	versionObject, err := m.versionCache.Get(machineInfo.MachineID)
 	if err != nil {
 		return nil, err
 	}

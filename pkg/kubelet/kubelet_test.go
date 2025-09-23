@@ -84,6 +84,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/logs"
 	"k8s.io/kubernetes/pkg/kubelet/metrics"
 	"k8s.io/kubernetes/pkg/kubelet/network/dns"
+	"k8s.io/kubernetes/pkg/kubelet/noderesource"
 	"k8s.io/kubernetes/pkg/kubelet/nodeshutdown"
 	"k8s.io/kubernetes/pkg/kubelet/pleg"
 	"k8s.io/kubernetes/pkg/kubelet/pluginmanager"
@@ -315,6 +316,7 @@ func newTestKubeletWithImageList(
 	kubelet.livenessManager = proberesults.NewManager()
 	kubelet.readinessManager = proberesults.NewManager()
 	kubelet.startupManager = proberesults.NewManager()
+	kubelet.nodeResourceManager = noderesource.NewNodeResourceManager(nil)
 
 	fakeContainerManager := cm.NewFakeContainerManager()
 	kubelet.containerManager = fakeContainerManager
@@ -3445,6 +3447,7 @@ func TestSyncPodSpans(t *testing.T) {
 		tp,
 		token.NewManager(kubelet.kubeClient),
 		func(string, string) (*v1.ServiceAccount, error) { return nil, nil },
+		kubelet.GetCachedMachineInfo,
 	)
 	assert.NoError(t, err)
 	kubelet.allocationManager.SetContainerRuntime(kubelet.containerRuntime)

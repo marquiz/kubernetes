@@ -33,6 +33,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"k8s.io/kubernetes/pkg/kubelet/noderesource"
+
 	cadvisorapi "github.com/google/cadvisor/info/v1"
 	inuserns "github.com/moby/sys/userns"
 	"github.com/opencontainers/selinux/go-selinux"
@@ -823,6 +825,7 @@ func NewMainKubelet(ctx context.Context,
 		kubeDeps.TracerProvider,
 		tokenManager,
 		getServiceAccount,
+		klet.GetCachedMachineInfo,
 	)
 	if err != nil {
 		return nil, err
@@ -1110,6 +1113,12 @@ func NewMainKubelet(ctx context.Context,
 	// Finally, put the most recent version of the config on the Kubelet, so
 	// people can see how it was configured.
 	klet.kubeletConfiguration = *kubeCfg
+
+	klet.nodeResourceManager = noderesource.NewNodeResourceManager(&noderesource.Config{
+		Host:               klet,
+		CAdvisor:           klet.cadvisor,
+		SyncNodeStatusFunc: klet.syncNodeStatus,
+	})
 
 	// Generating the status funcs should be the last thing we do,
 	// since this relies on the rest of the Kubelet having been constructed.
@@ -1556,6 +1565,8 @@ type Kubelet struct {
 
 	// flagz is the Reader interface to get flags for flagz page.
 	flagz flagz.Reader
+
+	nodeResourceManager noderesource.Manager
 }
 
 // ListPodStats is delegated to StatsProvider, which implements stats.Provider interface
@@ -1928,6 +1939,10 @@ func (kl *Kubelet) Run(updates <-chan kubetypes.PodUpdate) {
 
 	if utilfeature.DefaultFeatureGate.Enabled(features.SystemdWatchdog) && kl.healthChecker != nil {
 		kl.healthChecker.SetHealthCheckers(kl, kl.containerManager.GetHealthCheckers())
+	}
+
+	if utilfeature.DefaultFeatureGate.Enabled(features.NodeResourceHotPlug) {
+		kl.nodeResourceManager.Start()
 	}
 
 	kl.syncLoop(ctx, updates, kl)
@@ -2695,6 +2710,66 @@ func (kl *Kubelet) syncLoopIteration(ctx context.Context, configCh <-chan kubety
 			// We do not apply the optimization by updating the status directly, but can do it later
 			handler.HandlePodSyncs(pods)
 		}
+	case machineInfo := <-kl.nodeResourceManager.MachineInfo():
+		resizeContainers := func() error {
+			// Fetch all the runtime reported containers grouped by pods.
+			runningPods, err := kl.runtimeCache.GetPods(ctx)
+			if err != nil {
+				klog.ErrorS(err, "Kubelet failed to retrieve running pods from runtime")
+				return err
+			}
+
+			runningPodsByUID := make(map[types.UID]*kubecontainer.Pod)
+			for _, pod := range runningPods {
+				runningPodsByUID[pod.ID] = pod
+			}
+
+			// Fetch all the allocated pods.
+			allocatedPods := kl.getAllocatedPods()
+
+			for _, pod := range allocatedPods {
+				runningPod, knownPod := runningPodsByUID[pod.UID]
+				if !knownPod {
+					klog.InfoS("Ignoring pod as its not reported in runtime", "pod", pod.Name)
+					continue
+				}
+
+				for _, container := range pod.Spec.Containers {
+					containerDetails := runningPod.FindContainerByName(container.Name)
+					if containerDetails == nil {
+						klog.InfoS("Skipping resizing container as not able to find its ID", "container", container.Name)
+						continue
+					}
+					// Update the container resource.
+					err = kl.containerRuntime.UpdateContainerResources(ctx, pod, &container, containerDetails.ID)
+					if err != nil {
+						klog.ErrorS(err, "UpdateContainerResources failed", "container", container.Name)
+						return err
+					}
+				}
+			}
+			return nil
+		}
+
+		// Resize the containers.
+		klog.InfoS("Resizing containers because of change in MachineInfo")
+		if err := resizeContainers(); err != nil {
+			klog.ErrorS(err, "Failed to resize containers with change in machine info")
+			kl.recorder.Eventf(kl.nodeRef, v1.EventTypeWarning, events.FailedNodeResize, err.Error())
+			break
+		}
+
+		// Resync the resource managers.
+		klog.InfoS("ResyncComponents resource managers because of change in MachineInfo")
+		if err := kl.containerManager.ResyncComponents(machineInfo); err != nil {
+			klog.ErrorS(err, "Failed to resync resource managers with machine info update")
+			kl.recorder.Eventf(kl.nodeRef, v1.EventTypeWarning, events.FailedNodeResize, err.Error())
+			break
+		}
+
+		// Update the cached MachineInfo.
+		kl.setCachedMachineInfo(machineInfo)
+
 	case <-housekeepingCh:
 		if !kl.sourcesReady.AllReady() {
 			// If the sources aren't ready or volume manager has not yet synced the states,

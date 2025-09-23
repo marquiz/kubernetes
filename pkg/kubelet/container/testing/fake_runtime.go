@@ -572,3 +572,11 @@ func (f *FakeRuntime) GetContainerSwapBehavior(pod *v1.Pod, container *v1.Contai
 func (f *FakeRuntime) IsPodResizeInProgress(allocatedPod *v1.Pod, podStatus *kubecontainer.PodStatus) bool {
 	return false
 }
+
+func (f *FakeRuntime) UpdateContainerResources(_ context.Context, _ *v1.Pod, _ *v1.Container, _ kubecontainer.ContainerID) error {
+	f.Lock()
+	defer f.Unlock()
+
+	f.CalledFunctions = append(f.CalledFunctions, "UpdateContainerResources")
+	return nil
+}
