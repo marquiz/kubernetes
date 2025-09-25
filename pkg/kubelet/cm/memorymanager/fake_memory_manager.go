@@ -22,11 +22,14 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
+	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config"
 	"k8s.io/kubernetes/pkg/kubelet/cm/containermap"
 	"k8s.io/kubernetes/pkg/kubelet/cm/memorymanager/state"
 	"k8s.io/kubernetes/pkg/kubelet/cm/topologymanager"
 	"k8s.io/kubernetes/pkg/kubelet/config"
 	"k8s.io/kubernetes/pkg/kubelet/status"
+
+	cadvisorapi "github.com/google/cadvisor/info/v1"
 )
 
 type fakeManager struct {
@@ -42,7 +45,7 @@ func (m *fakeManager) Start(ctx context.Context, activePods ActivePodsFunc, sour
 func (m *fakeManager) Policy(ctx context.Context) Policy {
 	logger := klog.FromContext(ctx)
 	logger.Info("Policy()")
-	return NewPolicyNone(ctx)
+	return NewPolicyNone()
 }
 
 func (m *fakeManager) Allocate(pod *v1.Pod, container *v1.Container) error {
@@ -99,6 +102,10 @@ func (m *fakeManager) GetMemory(ctx context.Context, podUID, containerName strin
 	logger := klog.LoggerWithValues(klog.FromContext(ctx), "podUID", podUID, "containerName", containerName)
 	logger.Info("Get Memory")
 	return []state.Block{}
+}
+
+func (m *fakeManager) SyncMachineInfo(policyName string, machineInfo *cadvisorapi.MachineInfo, nodeAllocatableReservation v1.ResourceList, reservedMemory []kubeletconfig.MemoryReservation, affinity topologymanager.Store) error {
+	return nil
 }
 
 // NewFakeManager creates empty/fake memory manager

@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"sync"
 
+	cadvisorapi "github.com/google/cadvisor/info/v1"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	kubefeatures "k8s.io/kubernetes/pkg/features"
 	"k8s.io/kubernetes/pkg/kubelet/cm/memorymanager"
@@ -377,4 +378,8 @@ func (cm *containerManagerImpl) PodHasExclusiveCPUs(pod *v1.Pod) bool {
 
 func (cm *containerManagerImpl) ContainerHasExclusiveCPUs(pod *v1.Pod, container *v1.Container) bool {
 	return containerHasExclusiveCPUs(cm.cpuManager, pod, container)
+}
+
+func (cm *containerManagerImpl) ResyncComponents(_ *cadvisorapi.MachineInfo) error {
+	return nil
 }

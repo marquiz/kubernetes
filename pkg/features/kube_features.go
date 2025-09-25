@@ -629,6 +629,13 @@ const (
 	// The recommendation is to enable it on a need basis for debugging purposes and disabling otherwise.
 	NodeLogQuery featuregate.Feature = "NodeLogQuery"
 
+	// owner: @karthik-k-n
+	// kep: https://kep.k8s.io/3953
+	// alpha: 1.34
+	//
+	// Enables hot plug of node compute resources
+	NodeResourceHotPlug featuregate.Feature = "NodeResourceHotPlug"
+
 	// owner: @iholder101 @kannon92
 	// kep: https://kep.k8s.io/2400
 	//
@@ -1495,6 +1502,10 @@ var defaultVersionedKubernetesFeatureGates = map[featuregate.Feature]featuregate
 	NodeLogQuery: {
 		{Version: version.MustParse("1.27"), Default: false, PreRelease: featuregate.Alpha},
 		{Version: version.MustParse("1.30"), Default: false, PreRelease: featuregate.Beta},
+	},
+
+	NodeResourceHotPlug: {
+		{Version: version.MustParse("1.34"), Default: false, PreRelease: featuregate.Alpha},
 	},
 
 	NodeSwap: {
